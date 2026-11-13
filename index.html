@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=app/">
-  <script>
-    // Seamless client-side redirect preserving query params and hash
-    window.location.replace("app/" + window.location.search + window.location.hash);
-  </script>
   <title>SDE-Mastery 40 | Study Portal</title>
+  <script>
+    // Bulletproof redirect preserving repository subpath, query parameters and hash
+    var base = window.location.pathname;
+    if (!base.endsWith('/')) {
+      base += '/';
+    }
+    window.location.replace(base + "app/" + window.location.search + window.location.hash);
+  </script>
   <style>
     body {
       background-color: #080B11;
@@ -38,7 +41,7 @@
   <div class="card">
     <h2>SDE-Mastery 40 Portal</h2>
     <p>Launching study portal and LeetCode playground...</p>
-    <p><a href="app/">Click here if not redirected automatically</a></p>
+    <p><a href="./app/">Click here if not redirected automatically</a></p>
   </div>
 </body>
 </html>
