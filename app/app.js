@@ -747,6 +747,24 @@ class StudyApp {
     }
   }
 
+  getUserCode() {
+    if (this.codeMirrorInstance) {
+      return this.codeMirrorInstance.getValue();
+    }
+    const fallback = document.getElementById('fallback-code-editor');
+    return fallback ? fallback.value : '';
+  }
+
+  setUserCode(val) {
+    if (this.codeMirrorInstance) {
+      this.codeMirrorInstance.setValue(val);
+    }
+    const fallback = document.getElementById('fallback-code-editor');
+    if (fallback) {
+      fallback.value = val;
+    }
+  }
+
   mountCodeMirror(problem) {
     const wrapper = document.getElementById('codemirror-editor-wrapper');
     if (!wrapper) return;
@@ -755,6 +773,21 @@ class StudyApp {
     const initialCode = this.userCodeStore[cacheKey] || problem.starterCode[this.activeLanguage] || '';
 
     const mode = this.activeLanguage === 'java' ? 'text/x-java' : 'javascript';
+
+    if (typeof CodeMirror === 'undefined') {
+      // Robust Fallback: native textarea if CodeMirror CDN is unreachable or blocked
+      wrapper.innerHTML = '';
+      const textarea = document.createElement('textarea');
+      textarea.id = 'fallback-code-editor';
+      textarea.className = 'fallback-editor-textarea';
+      textarea.spellcheck = false;
+      textarea.value = initialCode;
+      textarea.oninput = () => {
+        this.userCodeStore[cacheKey] = textarea.value;
+      };
+      wrapper.appendChild(textarea);
+      return;
+    }
 
     if (!this.codeMirrorInstance) {
       wrapper.innerHTML = '';
@@ -781,14 +814,15 @@ class StudyApp {
         this.userCodeStore[cacheKey] = this.codeMirrorInstance.getValue();
       });
       setTimeout(() => {
-        this.codeMirrorInstance.refresh();
+        if (this.codeMirrorInstance) this.codeMirrorInstance.refresh();
       }, 50);
     }
   }
 
   changeCodeLanguage(lang) {
     this.activeLanguage = lang;
-    document.getElementById('editor-filename').innerText = lang === 'java' ? 'Solution.java' : 'solution.js';
+    const fnEl = document.getElementById('editor-filename');
+    if (fnEl) fnEl.innerText = lang === 'java' ? 'Solution.java' : 'solution.js';
     const problems = (window.getProblemsForDay && window.getProblemsForDay(this.currentDay)) || [];
     const activeProb = problems[this.activeProblemIdx];
     if (activeProb) {
@@ -799,9 +833,9 @@ class StudyApp {
   resetCodeEditor() {
     const problems = (window.getProblemsForDay && window.getProblemsForDay(this.currentDay)) || [];
     const activeProb = problems[this.activeProblemIdx];
-    if (activeProb && this.codeMirrorInstance) {
+    if (activeProb) {
       const starter = activeProb.starterCode[this.activeLanguage] || '';
-      this.codeMirrorInstance.setValue(starter);
+      this.setUserCode(starter);
       const cacheKey = `d${this.currentDay}-${activeProb.id}-${this.activeLanguage}`;
       delete this.userCodeStore[cacheKey];
     }
@@ -810,10 +844,10 @@ class StudyApp {
   showSolutionCode() {
     const problems = (window.getProblemsForDay && window.getProblemsForDay(this.currentDay)) || [];
     const activeProb = problems[this.activeProblemIdx];
-    if (activeProb && this.codeMirrorInstance) {
+    if (activeProb) {
       const sol = activeProb.solutionCode[this.activeLanguage] || '';
       if (confirm('Reveal optimal reference solution in the editor?')) {
-        this.codeMirrorInstance.setValue(sol);
+        this.setUserCode(sol);
       }
     }
   }
@@ -849,9 +883,8 @@ class StudyApp {
   runCode(isSubmit = false) {
     const problems = (window.getProblemsForDay && window.getProblemsForDay(this.currentDay)) || [];
     const problem = problems[this.activeProblemIdx];
-    if (!problem || !this.codeMirrorInstance) return;
-
-    const userCode = this.codeMirrorInstance.getValue();
+    const userCode = this.getUserCode();
+    if (!problem || !userCode) return;
     const resultBox = document.getElementById('test-result-box');
     const statusBadge = document.getElementById('test-result-status-badge');
     const runtimeDisplay = document.getElementById('test-runtime-display');

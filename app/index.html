@@ -8,46 +8,48 @@
   <!-- Tailwind CSS CDN with Custom Palette Override -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            void: '#080B11',
-            surface: {
-              1: '#0D131F',
-              2: '#121A2A',
-              3: '#1A2438'
+    if (typeof tailwind !== 'undefined') {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              void: '#080B11',
+              surface: {
+                1: '#0D131F',
+                2: '#121A2A',
+                3: '#1A2438'
+              },
+              hairline: 'rgba(255, 255, 255, 0.08)',
+              cyan: {
+                400: '#38BDF8',
+                500: '#0EA5E9',
+                600: '#0284C7'
+              },
+              sage: {
+                400: '#34D399',
+                500: '#10B981',
+                600: '#059669'
+              },
+              terracotta: {
+                400: '#FBBF24',
+                500: '#F59E0B',
+                600: '#D97706'
+              },
+              crimson: {
+                400: '#FB7185',
+                500: '#F43F5E',
+                600: '#E11D48'
+              }
             },
-            hairline: 'rgba(255, 255, 255, 0.08)',
-            cyan: {
-              400: '#38BDF8',
-              500: '#0EA5E9',
-              600: '#0284C7'
-            },
-            sage: {
-              400: '#34D399',
-              500: '#10B981',
-              600: '#059669'
-            },
-            terracotta: {
-              400: '#FBBF24',
-              500: '#F59E0B',
-              600: '#D97706'
-            },
-            crimson: {
-              400: '#FB7185',
-              500: '#F43F5E',
-              600: '#E11D48'
+            fontFamily: {
+              display: ['Space Grotesk', 'sans-serif'],
+              sans: ['Plus Jakarta Sans', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace']
             }
-          },
-          fontFamily: {
-            display: ['Space Grotesk', 'sans-serif'],
-            sans: ['Plus Jakarta Sans', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace']
           }
         }
-      }
+      };
     }
   </script>
 
