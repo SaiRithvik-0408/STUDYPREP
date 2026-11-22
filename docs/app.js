@@ -40,8 +40,11 @@ class StudyApp {
     // AI Doubt Solver Agent State
     this.agentOpen = false;
     this.agentSettingsOpen = false;
-    this.agentProvider = this.loadStorage('sde_agent_provider', 'offline');
-    this.agentApiKey = this.loadStorage('sde_agent_key', '');
+    this.defaultGeminiKey = 'AIzaSyBFIUAjHZvfCoXERvXyxh2EIHsASJBUQX4';
+    this.aiAccessPin = '0408';
+    this.isPinUnlocked = this.loadStorage('sde_ai_pin_unlocked', false);
+    this.agentApiKey = this.loadStorage('sde_agent_key', ''); // User's custom API key (optional)
+    this.agentProvider = this.loadStorage('sde_agent_provider', 'gemini');
     this.agentChatHistory = this.loadStorage('sde_agent_history', []);
     this.agentIsTyping = false;
 
@@ -2342,6 +2345,16 @@ class StudyApp {
     reader.readAsText(file);
   }
 
+  getEffectiveGeminiKey() {
+    if (this.agentApiKey && this.agentApiKey.trim()) {
+      return this.agentApiKey.trim();
+    }
+    if (this.isPinUnlocked) {
+      return this.defaultGeminiKey;
+    }
+    return '';
+  }
+
   // ================= SDE-MASTERY AI TUTOR / DOUBT SOLVER =================
   initAgentUI() {
     const select = document.getElementById('agent-provider-select');
@@ -2350,16 +2363,34 @@ class StudyApp {
     const keyLabel = document.getElementById('agent-api-key-label');
     const modeBadge = document.getElementById('agent-mode-badge');
     const geminiHint = document.getElementById('agent-gemini-hint');
+    const pinStatusTag = document.getElementById('agent-pin-status-tag');
+    const btnLockPin = document.getElementById('btn-lock-pin');
 
     if (select) select.value = this.agentProvider;
     if (keyInput) keyInput.value = this.agentApiKey;
 
+    const hasCustomKey = !!this.agentApiKey && this.agentApiKey.trim().length > 0;
+
     const geminiBtnLabel = document.getElementById('gemini-key-status-label');
     if (geminiBtnLabel) {
-      if (this.agentProvider === 'gemini' && this.agentApiKey) {
+      if (hasCustomKey) {
+        geminiBtnLabel.innerText = 'Custom Key ✅';
+      } else if (this.isPinUnlocked) {
         geminiBtnLabel.innerText = 'Gemini Active ✅';
       } else {
-        geminiBtnLabel.innerText = 'Connect Gemini';
+        geminiBtnLabel.innerText = 'Enter PIN (0408)';
+      }
+    }
+
+    if (pinStatusTag) {
+      if (this.isPinUnlocked) {
+        pinStatusTag.innerText = 'Unlocked ✅';
+        pinStatusTag.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-sage-500/20 text-sage-400 border border-sage-500/30';
+        if (btnLockPin) btnLockPin.classList.remove('hidden');
+      } else {
+        pinStatusTag.innerText = 'Locked 🔒';
+        pinStatusTag.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-surface-3 text-slate-400 border border-white/[0.08]';
+        if (btnLockPin) btnLockPin.classList.add('hidden');
       }
     }
 
@@ -2375,20 +2406,27 @@ class StudyApp {
           modeBadge.innerText = '100% Free Built-in';
           modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sage-500/15 text-sage-400 border border-sage-500/25';
         }
-      } else {
+      } else if (select.value === 'gemini') {
         keyContainer.classList.remove('hidden');
-        if (select.value === 'gemini') {
-          if (keyLabel) keyLabel.innerText = 'Google Gemini API Key (Free):';
-          if (modeBadge) {
-            modeBadge.innerText = 'Gemini Free Tier';
+        if (keyLabel) keyLabel.innerText = 'Or Provide Your Own Gemini / OpenAI API Key (Optional):';
+        if (modeBadge) {
+          if (hasCustomKey) {
+            modeBadge.innerText = 'Gemini (Custom Key)';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-sage-500/15 text-sage-400 border border-sage-500/25';
+          } else if (this.isPinUnlocked) {
+            modeBadge.innerText = 'Gemini 3.5 Flash';
             modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25';
+          } else {
+            modeBadge.innerText = 'PIN: 0408 Required';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/25';
           }
-        } else if (select.value === 'openai') {
-          if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
-          if (modeBadge) {
-            modeBadge.innerText = 'GPT-4o Mini (Paid)';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25';
-          }
+        }
+      } else if (select.value === 'openai') {
+        keyContainer.classList.remove('hidden');
+        if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
+        if (modeBadge) {
+          modeBadge.innerText = 'GPT-4o Mini (Paid)';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25';
         }
       }
     }
@@ -2397,26 +2435,70 @@ class StudyApp {
     this.renderAgentChatHistory();
   }
 
-  promptGeminiApiKey() {
-    const existing = this.loadStorage('sde_agent_key', '');
-    const key = prompt('Paste your Google Gemini API Key:\n\n(Get a 100% free key with no credit card at: https://aistudio.google.com/app/apikey)\n\nTip: You can also paste it directly into the chat prompt below!', existing);
-    if (key !== null) {
-      const cleanKey = key.trim();
-      if (cleanKey) {
-        this.agentApiKey = cleanKey;
-        this.agentProvider = 'gemini';
-        this.saveStorage('sde_agent_key', cleanKey);
-        this.saveStorage('sde_agent_provider', 'gemini');
-        alert('✅ Google Gemini API key connected successfully!\n\nAI Tutor is now powered by Gemini 2.0 Flash in the cloud.');
-      } else {
-        this.agentApiKey = '';
-        this.agentProvider = 'offline';
-        this.saveStorage('sde_agent_key', '');
-        this.saveStorage('sde_agent_provider', 'offline');
-        alert('Switched back to Built-in Knowledge Engine.');
-      }
-      this.initAgentUI();
+  promptPinOrKey() {
+    if (this.isPinUnlocked && !this.agentApiKey) {
+      const choice = confirm('✨ Google Gemini Cloud AI is currently UNLOCKED with PIN 0408.\n\nClick "OK" if you want to provide your own custom API key instead, or "Cancel" to keep using the default key.');
+      if (!choice) return;
     }
+
+    const userInput = prompt('🔐 AI Tutor Access Verification:\n\n👉 Enter PIN 0408 to unlock the pre-configured Gemini Cloud AI\n👉 OR paste your own Google Gemini API key (starts with AIzaSy...):\n\n(Tip: Enter 0408 to unlock immediately)', this.isPinUnlocked ? '0408' : '');
+    if (userInput === null) return;
+    const clean = userInput.trim();
+    if (!clean) return;
+
+    if (clean === this.aiAccessPin) {
+      this.isPinUnlocked = true;
+      this.saveStorage('sde_ai_pin_unlocked', true);
+      this.agentProvider = 'gemini';
+      this.saveStorage('sde_agent_provider', 'gemini');
+      this.initAgentUI();
+      alert('🎉 PIN 0408 verified!\n\nGoogle Gemini Cloud AI is now unlocked and powered by Gemini 3.5 Flash.');
+    } else if (clean.startsWith('AIzaSy')) {
+      this.agentApiKey = clean;
+      this.agentProvider = 'gemini';
+      this.saveStorage('sde_agent_key', clean);
+      this.saveStorage('sde_agent_provider', 'gemini');
+      this.initAgentUI();
+      alert('✅ Custom Gemini API key saved successfully!\n\nAI Tutor is now powered by your personal key.');
+    } else {
+      alert('⚠️ Unrecognized input.\n\nPlease enter PIN 0408 to unlock the default Gemini AI, or paste a valid API key starting with AIzaSy.');
+    }
+  }
+
+  promptGeminiApiKey() {
+    this.promptPinOrKey();
+  }
+
+  verifyAndUnlockPin(pin) {
+    if (!pin) {
+      alert('Please enter PIN (0408) to unlock Gemini.');
+      return;
+    }
+    const clean = pin.trim();
+    if (clean === this.aiAccessPin) {
+      this.isPinUnlocked = true;
+      this.saveStorage('sde_ai_pin_unlocked', true);
+      this.agentProvider = 'gemini';
+      this.saveStorage('sde_agent_provider', 'gemini');
+      this.initAgentUI();
+      alert('🎉 Access PIN 0408 verified! Google Gemini Cloud AI is now unlocked.');
+    } else if (clean.startsWith('AIzaSy')) {
+      this.agentApiKey = clean;
+      this.agentProvider = 'gemini';
+      this.saveStorage('sde_agent_key', clean);
+      this.saveStorage('sde_agent_provider', 'gemini');
+      this.initAgentUI();
+      alert('✅ Custom Gemini API key saved successfully!');
+    } else {
+      alert('⚠️ Incorrect PIN. Enter 0408 to unlock the default Gemini AI, or paste your own API key.');
+    }
+  }
+
+  lockPin() {
+    this.isPinUnlocked = false;
+    this.saveStorage('sde_ai_pin_unlocked', false);
+    this.initAgentUI();
+    alert('🔒 Shared Gemini AI has been locked. PIN 0408 will be required to use it.');
   }
 
   updateAgentContextBadge() {
@@ -2547,6 +2629,23 @@ class StudyApp {
     const query = input.value.trim();
     if (!query) return;
 
+    // Detect if user typed the access PIN into the chat!
+    if (query === this.aiAccessPin) {
+      input.value = '';
+      this.isPinUnlocked = true;
+      this.saveStorage('sde_ai_pin_unlocked', true);
+      this.agentProvider = 'gemini';
+      this.saveStorage('sde_agent_provider', 'gemini');
+      this.initAgentUI();
+      this.appendAgentMessage('user', '🔐 ' + this.aiAccessPin);
+      this.appendAgentMessage('assistant', `### 🎉 Access PIN Verified!
+Google Gemini Cloud AI is now unlocked and active by default.
+Powered by **Google Gemini 3.5 Flash** in the cloud.
+
+Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code execution, or system architecture!`);
+      return;
+    }
+
     // Detect if user pasted a Gemini API key into the chat!
     if (query.startsWith('AIzaSy') && query.length > 25) {
       input.value = '';
@@ -2555,14 +2654,31 @@ class StudyApp {
       this.saveStorage('sde_agent_key', query);
       this.saveStorage('sde_agent_provider', 'gemini');
       this.initAgentUI();
-      this.appendAgentMessage('user', '🔑 Connecting Google Gemini API Key...');
-      this.appendAgentMessage('assistant', `### 🎉 Google Gemini API Key Connected!
+      this.appendAgentMessage('user', '🔑 Connecting Custom Google Gemini API Key...');
+      this.appendAgentMessage('assistant', `### 🎉 Custom Gemini API Key Connected!
 
 Your API key has been securely saved in your browser's \`localStorage\`.
-The AI Tutor is now powered by **Google Gemini 2.0 Flash (Cloud)**.
+The AI Tutor is now powered by your personal key on **Google Gemini 3.5 Flash**.
 
 Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code execution, or system architecture!`);
       return;
+    }
+
+    // If Gemini is selected but not unlocked with PIN and no custom key:
+    if (this.agentProvider === 'gemini' && !this.getEffectiveGeminiKey()) {
+      const pinOrKey = prompt('🔐 AI Tutor Access Verification:\n\nTo use Google Gemini Cloud AI, enter PIN (0408):\n\n👉 OR paste your own Gemini API key (starts with AIzaSy):\n\n(Click Cancel to use the 100% Free Offline Knowledge Engine)', '0408');
+      if (pinOrKey !== null) {
+        const clean = pinOrKey.trim();
+        if (clean === this.aiAccessPin) {
+          this.isPinUnlocked = true;
+          this.saveStorage('sde_ai_pin_unlocked', true);
+          this.initAgentUI();
+        } else if (clean.startsWith('AIzaSy')) {
+          this.agentApiKey = clean;
+          this.saveStorage('sde_agent_key', clean);
+          this.initAgentUI();
+        }
+      }
     }
 
     input.value = '';
@@ -2605,6 +2721,43 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     if (!container) return;
 
     if (this.agentChatHistory.length === 0) {
+      const hasCustom = !!this.agentApiKey && this.agentApiKey.trim().length > 0;
+      const isUnlocked = this.isPinUnlocked || hasCustom;
+
+      const cardHtml = isUnlocked ? `
+        <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-rose-500/30 flex items-center justify-between text-xs font-mono">
+          <div>
+            <span class="text-rose-400 font-bold block">✨ Google Gemini Cloud AI Active</span>
+            <span class="text-[10px] text-slate-400">${hasCustom ? 'Custom API Key' : 'Unlocked with PIN 0408'} • Gemini 3.5 Flash</span>
+          </div>
+          <button onclick="app.promptPinOrKey()" class="px-2.5 py-1 bg-surface-2 hover:bg-surface-3 text-slate-300 font-medium rounded-lg text-[11px] border border-white/[0.08] transition">
+            Change Key / PIN
+          </button>
+        </div>
+      ` : `
+        <div class="mt-2 p-3 rounded-xl bg-surface-1 border border-rose-500/30 text-xs font-mono space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-rose-400 font-bold flex items-center gap-1.5">
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+              <span>✨ Google Gemini Cloud AI</span>
+            </span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/25">PIN: 0408</span>
+          </div>
+          <p class="text-[11px] text-slate-300">
+            Enter PIN <strong class="text-white font-mono">0408</strong> to unlock pre-configured Gemini AI, or provide your own API key.
+          </p>
+          <div class="flex items-center gap-2 pt-1 flex-wrap">
+            <input type="password" id="agent-pin-quick-input" placeholder="Enter PIN 0408..." maxlength="10" class="w-28 px-2.5 py-1.5 bg-surface-2 border border-white/[0.12] rounded-lg text-slate-200 text-xs focus:outline-none focus:border-red-500 font-mono" onkeydown="if(event.key==='Enter'){event.preventDefault();app.verifyAndUnlockPin(this.value);}">
+            <button onclick="app.verifyAndUnlockPin(document.getElementById('agent-pin-quick-input')?.value)" class="px-3 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-xs transition shadow-sm">
+              Unlock
+            </button>
+            <button onclick="app.toggleAgentSettings(true)" class="px-2.5 py-1.5 bg-surface-2 hover:bg-surface-3 text-slate-300 rounded-lg text-xs border border-white/[0.08] transition">
+              Provide My Own Key
+            </button>
+          </div>
+        </div>
+      `;
+
       container.innerHTML = `
         <div class="flex items-start space-x-2.5">
           <div class="w-6 h-6 rounded bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 mt-0.5">
@@ -2623,15 +2776,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
               <li><strong>AI</strong>: Tokens, BPE, structured JSON schemas, RAG, agents</li>
             </ul>
 
-            <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-rose-500/30 flex items-center justify-between text-xs font-mono">
-              <div>
-                <span class="text-rose-400 font-bold block">✨ Google Gemini Cloud AI</span>
-                <span class="text-[10px] text-slate-400">100% Free • Unlimited Conversations</span>
-              </div>
-              <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-[11px] transition shadow-sm">
-                Connect Key
-              </button>
-            </div>
+            ${cardHtml}
 
             <p class="text-slate-400 text-[11px]">
               Ask me anything about the current day's lessons, drills, or homework!
@@ -2692,9 +2837,16 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
 
     const ctx = { dayNum, dayTitle, moduleKey, pageExcerpt };
 
-    // 1. Google Gemini API
-    if (this.agentProvider === 'gemini' && this.agentApiKey) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(this.agentApiKey)}`;
+    // 1. Google Gemini API (Powered by Default Key + PIN 0408 or Custom Key)
+    const effectiveGeminiKey = this.getEffectiveGeminiKey();
+    if (this.agentProvider === 'gemini' && effectiveGeminiKey) {
+      const candidateModels = [
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.1-flash-lite',
+        'gemini-flash-latest'
+      ];
+
       const sysPrompt = `You are the SDE-Mastery 40 Senior Principal Staff Engineer and AI Tutor. The student is studying Day ${dayNum}: "${dayTitle}", currently focusing on the "${moduleKey.toUpperCase()}" module. Current curriculum excerpt:\n"""${pageExcerpt.slice(0, 800)}"""\n\nAnswer the user's doubt with absolute technical rigor, step-by-step clarity, code snippets (TypeScript/JavaScript/Docker/Python), memory layout diagrams if helpful, and senior FAANG interview advice. Format in clean GitHub-flavored markdown.`;
       
       const payload = {
@@ -2707,19 +2859,32 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
         }
       };
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      let lastError = null;
+      for (const model of candidateModels) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(effectiveGeminiKey)}`;
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(`Gemini Error ${res.status}: ${errJson.error?.message || res.statusText}`);
+          if (res.ok) {
+            const data = await res.json();
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (reply) return reply;
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            lastError = `Gemini (${model}) Error ${res.status}: ${errJson.error?.message || res.statusText}`;
+            console.warn(`Gemini model ${model} non-200, trying fallback:`, lastError);
+          }
+        } catch (fetchErr) {
+          lastError = fetchErr.message;
+          console.warn(`Gemini network error on ${model}:`, fetchErr);
+        }
       }
 
-      const data = await res.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received from Gemini.";
+      throw new Error(lastError || 'All Gemini models temporarily unavailable.');
     }
 
     // 2. OpenAI API

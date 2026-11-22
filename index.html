@@ -885,13 +885,13 @@
       </div>
       
       <div class="flex items-center space-x-1">
-        <!-- Quick Gemini Key Connect Button -->
-        <button onclick="app.promptGeminiApiKey()" title="Enter or Update Free Gemini API Key" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 text-[10px] font-mono transition">
+        <!-- Quick Gemini Key / PIN Connect Button -->
+        <button onclick="app.promptPinOrKey()" title="Unlock Gemini with PIN 0408 or connect custom key" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 text-[10px] font-mono transition">
           <i data-lucide="key" class="w-3 h-3"></i>
-          <span id="gemini-key-status-label">Connect Gemini</span>
+          <span id="gemini-key-status-label">Enter PIN (0408)</span>
         </button>
-        <!-- Settings button (Configure API Key or provider) -->
-        <button onclick="app.toggleAgentSettings()" title="AI Model Settings (Gemini / OpenAI / Built-in)" class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-surface-3 transition">
+        <!-- Settings button (Configure API Key, PIN, or provider) -->
+        <button onclick="app.toggleAgentSettings()" title="AI Model Settings (Gemini / PIN 0408 / Custom Key)" class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-surface-3 transition">
           <i data-lucide="settings" class="w-4 h-4"></i>
         </button>
         <!-- Close drawer -->
@@ -910,22 +910,41 @@
       <div>
         <label class="block text-[10px] text-slate-400 mb-1">Provider Engine:</label>
         <select id="agent-provider-select" onchange="app.onAgentProviderChange()" class="w-full px-2 py-1 bg-surface-1 border border-white/[0.1] rounded text-slate-200 text-xs">
-          <option value="offline">✨ Built-in Knowledge Engine (100% Free • Zero Setup • Browser Hosted)</option>
-          <option value="gemini">☁️ Google Gemini Cloud API (100% Free Tier • Google Hosted • No Card)</option>
+          <option value="gemini">☁️ Google Gemini Cloud API (Default Key + PIN 0408 / Custom Key)</option>
+          <option value="offline">✨ Built-in Knowledge Engine (100% Free • Zero Setup • Offline)</option>
           <option value="openai">🔑 OpenAI Cloud API (Requires Paid Key)</option>
         </select>
       </div>
-      <div id="agent-api-key-container" class="hidden">
-        <label class="block text-[10px] text-slate-400 mb-1" id="agent-api-key-label">API Key / Endpoint URL:</label>
-        <div class="flex gap-1.5">
-          <input type="password" id="agent-api-key-input" placeholder="Paste your API key here (AIzaSy...)..." class="flex-1 px-2.5 py-1 bg-surface-1 border border-white/[0.1] rounded-lg text-slate-200 text-xs focus:outline-none focus:border-red-500">
-          <button onclick="app.saveAgentSettings()" class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs hover:bg-rose-500/30 border border-rose-500/30">Save</button>
+
+      <!-- PIN 0408 Unlock for Default Gemini Key -->
+      <div id="agent-pin-container" class="p-2.5 rounded-lg bg-surface-1 border border-rose-500/25 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-rose-400 flex items-center gap-1">
+            <i data-lucide="lock" class="w-3 h-3"></i>
+            <span>Default Gemini Access (PIN: 0408)</span>
+          </span>
+          <span id="agent-pin-status-tag" class="text-[9px] px-1.5 py-0.2 rounded font-mono bg-surface-3 text-slate-400 border border-white/[0.08]">Locked 🔒</span>
         </div>
-        <div id="agent-gemini-hint" class="hidden text-[10px] text-rose-400 pt-1">
-          👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="underline hover:text-rose-300">Click here to get a 100% Free Gemini API Key</a> (No credit card needed, 1,500 free requests/day).
+        <p class="text-[10px] text-slate-400">Enter PIN <strong class="text-slate-200">0408</strong> to unlock the pre-configured Gemini AI, or provide your own key below.</p>
+        <div class="flex gap-1.5 items-center">
+          <input type="password" id="agent-settings-pin-input" placeholder="Enter PIN 0408..." maxlength="10" class="w-28 px-2 py-1 bg-surface-2 border border-white/[0.1] rounded text-slate-200 text-xs font-mono focus:outline-none focus:border-red-500" onkeydown="if(event.key==='Enter'){event.preventDefault();app.verifyAndUnlockPin(this.value);}">
+          <button onclick="app.verifyAndUnlockPin(document.getElementById('agent-settings-pin-input')?.value)" class="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded text-xs transition">Verify PIN</button>
+          <button onclick="app.lockPin()" id="btn-lock-pin" class="hidden px-2 py-1 bg-surface-3 hover:bg-surface-2 text-slate-400 rounded text-xs transition">Lock</button>
         </div>
       </div>
-      <p class="text-[10px] text-slate-500 italic">Saved securely in your browser's localStorage. Built-in engine requires zero keys.</p>
+
+      <!-- Custom Key Section -->
+      <div id="agent-api-key-container">
+        <label class="block text-[10px] text-slate-400 mb-1" id="agent-api-key-label">Or Provide Your Own Gemini / OpenAI API Key (Optional):</label>
+        <div class="flex gap-1.5">
+          <input type="password" id="agent-api-key-input" placeholder="Paste your own API key here (AIzaSy...)..." class="flex-1 px-2.5 py-1 bg-surface-1 border border-white/[0.1] rounded-lg text-slate-200 text-xs focus:outline-none focus:border-red-500">
+          <button onclick="app.saveAgentSettings()" class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs hover:bg-rose-500/30 border border-rose-500/30 font-medium">Save</button>
+        </div>
+        <div id="agent-gemini-hint" class="text-[10px] text-rose-400 pt-1">
+          👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="underline hover:text-rose-300">Click here to get your personal free Gemini API Key</a> (No credit card needed).
+        </div>
+      </div>
+      <p class="text-[10px] text-slate-500 italic">Saved securely in your browser's localStorage.</p>
     </div>
 
     <!-- Context Pill Bar & Quick Doubt Prompts -->
@@ -964,14 +983,26 @@
             <li><strong>AI</strong>: Tokens, BPE, structured JSON schemas, RAG, agents</li>
           </ul>
           
-          <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-rose-500/30 flex items-center justify-between text-xs font-mono">
-            <div>
-              <span class="text-rose-400 font-bold block">✨ Google Gemini Cloud AI</span>
-              <span class="text-[10px] text-slate-400">100% Free • Unlimited Conversations</span>
+          <div id="agent-welcome-card" class="mt-2 p-3 rounded-xl bg-surface-1 border border-rose-500/30 text-xs font-mono space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-rose-400 font-bold flex items-center gap-1.5">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                <span>✨ Google Gemini Cloud AI</span>
+              </span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/25">PIN: 0408</span>
             </div>
-            <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-[11px] transition shadow-sm">
-              Connect Key
-            </button>
+            <p class="text-[11px] text-slate-300">
+              Enter PIN <strong class="text-white font-mono">0408</strong> to unlock pre-configured Gemini AI, or provide your own API key.
+            </p>
+            <div class="flex items-center gap-2 pt-1 flex-wrap">
+              <input type="password" id="agent-pin-quick-input" placeholder="Enter PIN 0408..." maxlength="10" class="w-28 px-2.5 py-1.5 bg-surface-2 border border-white/[0.12] rounded-lg text-slate-200 text-xs focus:outline-none focus:border-red-500 font-mono" onkeydown="if(event.key==='Enter'){event.preventDefault();app.verifyAndUnlockPin(this.value);}">
+              <button onclick="app.verifyAndUnlockPin(document.getElementById('agent-pin-quick-input')?.value)" class="px-3 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-xs transition shadow-sm">
+                Unlock
+              </button>
+              <button onclick="app.toggleAgentSettings(true)" class="px-2.5 py-1.5 bg-surface-2 hover:bg-surface-3 text-slate-300 rounded-lg text-xs border border-white/[0.08] transition">
+                Provide My Own Key
+              </button>
+            </div>
           </div>
           
           <p class="text-slate-400 text-[11px]">
