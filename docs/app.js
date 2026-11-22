@@ -1,5 +1,10 @@
 // SDE-Mastery 40 Application Logic, State Controller & LeetCode/NeetCode Code Runner
 
+// Universal HTML entity escaping utility
+function escapeHtml(str) {
+  return (str || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 class StudyApp {
   constructor() {
     this.data = window.CURRICULUM_DATA || { phases: [], days: {}, quizzes: {} };
@@ -49,7 +54,9 @@ class StudyApp {
     })();
     this.aiAccessPin = '0408';
     this.isPinUnlocked = this.loadStorage('sde_ai_pin_unlocked', false);
-    this.agentApiKey = this.loadStorage('sde_agent_key', ''); // User's custom API key (optional)
+    // Auto-sanitize saved custom key in case the user pasted curl commands or trailing tokens
+    this.agentApiKey = this.cleanApiKey(this.loadStorage('sde_agent_key', ''));
+    if (this.agentApiKey) this.saveStorage('sde_agent_key', this.agentApiKey);
     this.agentProvider = this.loadStorage('sde_agent_provider', 'gemini');
     this.agentChatHistory = this.loadStorage('sde_agent_history', []);
     this.agentIsTyping = false;
@@ -2351,18 +2358,29 @@ class StudyApp {
     reader.readAsText(file);
   }
 
+  cleanApiKey(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    const trimmed = raw.trim();
+    // Match standard Gemini or OpenAI key patterns even if surrounded by curl commands or quotes
+    const match = trimmed.match(/(AQ\.[A-Za-z0-9_-]{35,}|AIzaSy[A-Za-z0-9_-]{30,}|sk-[A-Za-z0-9_-]{30,})/);
+    if (match) return match[1].trim();
+    // Fallback: take first whitespace-delimited segment and strip quotes/escapes
+    const firstWord = trimmed.split(/\s+/)[0];
+    return firstWord.replace(/['",;\\]/g, '').trim();
+  }
+
   isGeminiKey(str) {
     if (!str || typeof str !== 'string') return false;
     const clean = str.trim();
-    return clean.startsWith('AIzaSy') || clean.startsWith('AQ.') || (clean.length >= 35 && !clean.startsWith('sk-'));
+    return clean.includes('AQ.') || clean.includes('AIzaSy') || (clean.length >= 35 && !clean.startsWith('sk-'));
   }
 
   getEffectiveGeminiKey() {
     if (this.agentApiKey && this.agentApiKey.trim()) {
-      return this.agentApiKey.trim();
+      return this.cleanApiKey(this.agentApiKey);
     }
     if (this.isPinUnlocked) {
-      return this.defaultGeminiKey;
+      return this.cleanApiKey(this.defaultGeminiKey);
     }
     return '';
   }
@@ -2616,7 +2634,7 @@ class StudyApp {
   saveAgentSettings() {
     const keyInput = document.getElementById('agent-api-key-input');
     if (keyInput) {
-      this.agentApiKey = keyInput.value.trim();
+      this.agentApiKey = this.cleanApiKey(keyInput.value);
       this.saveStorage('sde_agent_key', this.agentApiKey);
       alert('AI Tutor settings saved successfully!');
       this.toggleAgentSettings(false);
@@ -2661,9 +2679,9 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     // Detect if user pasted a Gemini API key into the chat!
     if (this.isGeminiKey(query)) {
       input.value = '';
-      this.agentApiKey = query;
+      this.agentApiKey = this.cleanApiKey(query);
       this.agentProvider = 'gemini';
-      this.saveStorage('sde_agent_key', query);
+      this.saveStorage('sde_agent_key', this.agentApiKey);
       this.saveStorage('sde_agent_provider', 'gemini');
       this.initAgentUI();
       this.appendAgentMessage('user', '🔑 Connecting Custom Google Gemini API Key...');
@@ -2686,8 +2704,8 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
           this.saveStorage('sde_ai_pin_unlocked', true);
           this.initAgentUI();
         } else if (this.isGeminiKey(clean)) {
-          this.agentApiKey = clean;
-          this.saveStorage('sde_agent_key', clean);
+          this.agentApiKey = this.cleanApiKey(clean);
+          this.saveStorage('sde_agent_key', this.agentApiKey);
           this.initAgentUI();
         }
       }
@@ -2712,12 +2730,17 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
       console.error('Agent error:', err);
       if (typingEl) typingEl.classList.add('hidden');
       this.agentIsTyping = false;
-      const fallbackAns = this.resolveDoubtOffline(query, {
-        dayNum: this.currentDay,
-        dayTitle: this.data.days[this.currentDay]?.title || 'Topic',
-        moduleKey: this.currentModule
-      });
-      this.appendAgentMessage('assistant', `⚠️ *Notice: Live API call could not be completed (${err.message || 'Network/Key error'}). Switched to Built-in Knowledge Engine:*\n\n` + fallbackAns);
+      try {
+        const fallbackAns = this.resolveDoubtOffline(query, {
+          dayNum: this.currentDay,
+          dayTitle: this.data.days[this.currentDay]?.title || 'Topic',
+          moduleKey: this.currentModule
+        });
+        this.appendAgentMessage('assistant', `⚠️ *Notice: Live API call could not be completed (${err.message || 'Network/Key error'}). Switched to Built-in Knowledge Engine:*\n\n` + fallbackAns);
+      } catch (fallbackErr) {
+        console.error('Offline fallback error:', fallbackErr);
+        this.appendAgentMessage('assistant', `### 💡 SDE-Mastery AI Tutor\n\nYou asked: *"**${escapeHtml(query)}**"*\n\nI encountered an unexpected issue (${escapeHtml(err.message)}). Please verify your Gemini API key in ⚙️ Settings or retry in a moment.`);
+      }
     }
   }
 
@@ -2852,11 +2875,13 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     // 1. Google Gemini API (Powered by Default Key + PIN 0408 or Custom Key)
     const effectiveGeminiKey = this.getEffectiveGeminiKey();
     if (this.agentProvider === 'gemini' && effectiveGeminiKey) {
+      const cleanKey = this.cleanApiKey(effectiveGeminiKey);
       const candidateModels = [
+        'gemini-flash-latest',
+        'gemini-3.8-flash',
         'gemini-3.5-flash',
         'gemini-3.5-flash-lite',
-        'gemini-3.1-flash-lite',
-        'gemini-flash-latest'
+        'gemini-3.1-flash-lite'
       ];
 
       const sysPrompt = `You are the SDE-Mastery 40 Senior Principal Staff Engineer and AI Tutor. The student is studying Day ${dayNum}: "${dayTitle}", currently focusing on the "${moduleKey.toUpperCase()}" module. Current curriculum excerpt:\n"""${pageExcerpt.slice(0, 800)}"""\n\nAnswer the user's doubt with absolute technical rigor, step-by-step clarity, code snippets (TypeScript/JavaScript/Docker/Python), memory layout diagrams if helpful, and senior FAANG interview advice. Format in clean GitHub-flavored markdown.`;
@@ -2874,15 +2899,18 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
       let lastError = null;
       for (const model of candidateModels) {
         try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(effectiveGeminiKey)}`;
-          const res = await fetch(endpoint, {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+          const fetchOptions = {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'X-goog-api-key': effectiveGeminiKey
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-          });
+          };
+          if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+            fetchOptions.signal = AbortSignal.timeout(9000);
+          }
+          const res = await fetch(endpoint, fetchOptions);
 
           if (res.ok) {
             const data = await res.json();
@@ -2966,6 +2994,26 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     const mod = ctx.moduleKey || this.currentModule;
 
     // --- Specific DSA Queries ---
+    if (q.includes('dsa') && (q.includes('full form') || q.includes('what is') || q.includes('meaning') || q.length < 8)) {
+      return `### 💡 DSA: Data Structures & Algorithms
+
+**Full Form**: **D**ata **S**tructures & **A**lgorithms
+
+#### 1. What is a Data Structure?
+A specialized format for organizing, processing, retrieving, and storing data in computer memory (RAM or disk).
+- **Linear Structures**: Arrays, Linked Lists, Stacks, Queues (sequential memory or pointer-linked elements).
+- **Non-Linear Structures**: Trees (Binary Search Trees, Heaps, Tries) and Graphs (dependency DAGs, network topologies).
+- **Hash-Based Structures**: Hash Maps & Hash Sets ($O(1)$ average-case lookup via cryptographic/non-cryptographic hashing and bucket arrays).
+
+#### 2. What is an Algorithm?
+A step-by-step, finite sequence of unambiguous instructions designed to solve a specific computational problem or calculate an output.
+- **Core Paradigms on Day 1**: Two Pointers, In-Place Array Mutation, Sliding Window, Binary Search, and Space-Time Tradeoffs.
+
+#### 3. Why DSA is Paramount for FAANG / Top-Tier SDEs
+- **Scalability**: An $O(N)$ algorithm handles 1,000,000 operations in ~1ms; an $O(N^2)$ algorithm takes ~16 minutes.
+- **Hardware Alignment**: Understanding contiguous RAM layouts vs pointer-chasing linked lists ensures cache hits on modern CPU L1/L2 caches.`;
+    }
+
     if (q.includes('unshift') || (q.includes('array') && q.includes('o(n)'))) {
       return `### 💡 Why \`arr.unshift()\` is $O(N)$ vs \`arr[i]\` is $O(1)$
 
