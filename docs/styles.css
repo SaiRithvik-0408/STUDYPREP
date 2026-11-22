@@ -1034,5 +1034,19 @@ code, pre, .font-mono {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+#module-tabs-track {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+#module-tabs-track::-webkit-scrollbar {
+  display: none !important;
+}
+
+.module-tab {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+
 
 

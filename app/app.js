@@ -105,6 +105,17 @@ class StudyApp {
     this.updateGlobalProgress();
     this.initAgentUI();
     this.initScrollTracker();
+
+    const track = document.getElementById('module-tabs-track');
+    if (track) {
+      track.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          track.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
+
     this.refreshIcons();
   }
 
@@ -619,13 +630,21 @@ class StudyApp {
     this.currentModule = moduleKey;
     this.updateAgentContextBadge();
 
+    let activeTabEl = null;
     document.querySelectorAll('.module-tab').forEach(tab => {
       if (tab.dataset.module === moduleKey) {
-        tab.className = 'module-tab active flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-cyan-400 bg-cyan-500/15 border border-cyan-500/25 whitespace-nowrap';
+        tab.className = 'module-tab active flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-cyan-400 bg-cyan-500/15 border border-cyan-500/25 whitespace-nowrap';
+        activeTabEl = tab;
       } else {
-        tab.className = 'module-tab flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap';
+        tab.className = 'module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap';
       }
     });
+
+    if (activeTabEl && typeof activeTabEl.scrollIntoView === 'function') {
+      try {
+        activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      } catch (e) {}
+    }
 
     const dsaToggle = document.getElementById('dsa-submode-toggle');
     if (dsaToggle) {
@@ -644,14 +663,14 @@ class StudyApp {
     const footerNav = document.getElementById('bottom-footer-nav');
 
     if (mode === 'doc') {
-      if (btnDoc) btnDoc.className = 'px-2.5 py-1 rounded font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center space-x-1 transition';
-      if (btnEditor) btnEditor.className = 'px-2.5 py-1 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition';
+      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center space-x-1 transition';
+      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition';
       document.getElementById('dsa-playground-container').classList.add('hidden');
       document.getElementById('markdown-container').classList.remove('hidden');
       if (footerNav) footerNav.classList.remove('hidden');
     } else {
-      if (btnDoc) btnDoc.className = 'px-2.5 py-1 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition';
-      if (btnEditor) btnEditor.className = 'px-2.5 py-1 rounded font-semibold bg-sage-500/20 text-sage-400 border border-sage-500/30 flex items-center space-x-1 transition';
+      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition';
+      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-semibold bg-sage-500/20 text-sage-400 border border-sage-500/30 flex items-center space-x-1 transition';
       document.getElementById('markdown-container').classList.add('hidden');
       document.getElementById('dsa-playground-container').classList.remove('hidden');
       if (footerNav) footerNav.classList.add('hidden'); // Hide footer in playground so editor takes full vertical space!
