@@ -195,7 +195,7 @@ ws_daily.views.sheetView[0].showGridLines = True
 headers = [
     "Day #", "Phase", "Curriculum Topic Title", "Status",
     "DSA", "Backend", "Frontend", "Docker", "AI", "Drills",
-    "Done / 6", "Day %", "Hours Spent", "Confidence (1-5)", "Date Completed", "Key Takeaways & Notes"
+    "Done / 6", "Day %", "Reading %", "Daily Quiz", "Hours Spent", "Confidence (1-5)", "Date Completed", "Key Takeaways & Notes"
 ]
 
 ws_daily.row_dimensions[3].height = 28
@@ -214,7 +214,7 @@ dv_yn.add("E4:J43")
 # Validation for Confidence
 dv_conf = DataValidation(type="whole", operator="between", formula1=1, formula2=5, allow_blank=True)
 ws_daily.add_data_validation(dv_conf)
-dv_conf.add("N4:N43")
+dv_conf.add("P4:P43")
 
 for d_num in range(1, 41):
     row_idx = d_num + 3
@@ -259,9 +259,23 @@ for d_num in range(1, 41):
     cell_pct.number_format = "0%"
     cell_pct.fill = fill
     cell_pct.border = thin_border
+
+    # Reading % (Scroll completion)
+    cell_read = ws_daily.cell(row=row_idx, column=13, value="0%")
+    cell_read.alignment = align_center
+    cell_read.font = regular_font
+    cell_read.fill = fill
+    cell_read.border = thin_border
+
+    # Daily Quiz Score
+    cell_quiz = ws_daily.cell(row=row_idx, column=14, value="Pending")
+    cell_quiz.alignment = align_center
+    cell_quiz.font = regular_font
+    cell_quiz.fill = fill
+    cell_quiz.border = thin_border
     
     # Hours Spent
-    cell_hrs = ws_daily.cell(row=row_idx, column=13, value="")
+    cell_hrs = ws_daily.cell(row=row_idx, column=15, value="")
     cell_hrs.alignment = align_center
     cell_hrs.number_format = "0.0"
     cell_hrs.font = regular_font
@@ -269,14 +283,14 @@ for d_num in range(1, 41):
     cell_hrs.border = thin_border
     
     # Confidence Score
-    cell_conf = ws_daily.cell(row=row_idx, column=14, value="")
+    cell_conf = ws_daily.cell(row=row_idx, column=16, value="")
     cell_conf.alignment = align_center
     cell_conf.font = regular_font
     cell_conf.fill = fill
     cell_conf.border = thin_border
     
     # Date Completed
-    cell_date = ws_daily.cell(row=row_idx, column=15, value="")
+    cell_date = ws_daily.cell(row=row_idx, column=17, value="")
     cell_date.alignment = align_center
     cell_date.number_format = "YYYY-MM-DD"
     cell_date.font = regular_font
@@ -284,7 +298,7 @@ for d_num in range(1, 41):
     cell_date.border = thin_border
     
     # Notes
-    cell_notes = ws_daily.cell(row=row_idx, column=16, value="")
+    cell_notes = ws_daily.cell(row=row_idx, column=18, value="")
     cell_notes.alignment = align_left
     cell_notes.font = regular_font
     cell_notes.fill = fill

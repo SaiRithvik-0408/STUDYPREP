@@ -44,6 +44,13 @@ class StudyApp {
     this.agentApiKey = this.loadStorage('sde_agent_key', '');
     this.agentChatHistory = this.loadStorage('sde_agent_history', []);
     this.agentIsTyping = false;
+
+    // Reading Scroll Progress State
+    this.scrollProgressMap = this.loadStorage('sde_study_scroll', {});
+
+    // Daily Quizzes State (40 Days)
+    this.dailyQuizScoresMap = this.loadStorage('sde_daily_quiz_scores', {});
+    this.dailyQuizAnswers = {};
   }
 
   loadStorage(key, fallback) {
@@ -97,7 +104,53 @@ class StudyApp {
     this.selectDay(this.currentDay, false);
     this.updateGlobalProgress();
     this.initAgentUI();
+    this.initScrollTracker();
     this.refreshIcons();
+  }
+
+  initScrollTracker() {
+    const scrollContainer = document.getElementById('main-content-scroll');
+    if (!scrollContainer) return;
+
+    let throttleTimer = null;
+    scrollContainer.addEventListener('scroll', () => {
+      if (this.currentView !== 'curriculum') return;
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(() => {
+        throttleTimer = null;
+        const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+        const pct = maxScroll > 0 ? Math.min(100, Math.max(0, Math.round((scrollContainer.scrollTop / maxScroll) * 100))) : 100;
+
+        const key = `${this.currentDay}-${this.currentModule}`;
+        if (!this.scrollProgressMap) this.scrollProgressMap = {};
+
+        const prev = this.scrollProgressMap[key] || { pct: 0, scrollTop: 0 };
+        this.scrollProgressMap[key] = {
+          scrollTop: scrollContainer.scrollTop,
+          pct: Math.max(prev.pct, pct),
+          updatedAt: new Date().toISOString()
+        };
+        this.saveStorage('sde_study_scroll', this.scrollProgressMap);
+
+        this.updateReadingProgressUI(pct);
+      }, 120);
+    }, { passive: true });
+  }
+
+  updateReadingProgressUI(pct) {
+    const text = document.getElementById('reading-progress-text');
+    const bar = document.getElementById('reading-progress-bar');
+    if (text) text.innerText = `${pct}% Read`;
+    if (bar) bar.style.width = `${pct}%`;
+  }
+
+  getDayReadingPct(dayNum) {
+    if (!this.scrollProgressMap) return 0;
+    const modules = ['overview', 'dsa', 'be', 'fe', 'docker', 'ai', 'others'];
+    const pcts = modules.map(m => (this.scrollProgressMap[`${dayNum}-${m}`]?.pct || 0));
+    const activePcts = pcts.filter(p => p > 0);
+    if (activePcts.length === 0) return 0;
+    return Math.round(activePcts.reduce((a, b) => a + b, 0) / activePcts.length);
   }
 
   refreshIcons() {
@@ -344,6 +397,39 @@ class StudyApp {
     }
   }
 
+  markDayDoneAndNext() {
+    const modules = ['dsa', 'be', 'fe', 'docker', 'ai', 'others'];
+    // 1. Mark all 6 daily modules as completed
+    modules.forEach(m => {
+      this.checklistMap[`${this.currentDay}-${m}`] = true;
+    });
+    this.saveStorage('sde_study_checklist', this.checklistMap);
+
+    // 2. Set day status to completed
+    this.statusMap[this.currentDay] = 'completed';
+    this.saveStorage('sde_study_status', this.statusMap);
+
+    // 3. Update badges, checklist checkboxes, sidebar and global progress
+    this.updateAutoStatusBadge();
+    this.renderDayChecklist();
+    this.renderSidebar();
+    this.updateGlobalProgress();
+
+    // 4. Confetti burst
+    if (window.confetti) {
+      try { confetti({ particleCount: 65, spread: 65, origin: { y: 0.65 } }); } catch (e) {}
+    }
+
+    // 5. Navigate to the next day
+    if (this.currentDay < 40) {
+      setTimeout(() => {
+        this.selectDay(this.currentDay + 1);
+      }, 350);
+    } else {
+      alert('🎉 Incredible achievement! You have completed all 40 days of the SDE-Mastery curriculum!');
+    }
+  }
+
   updateAutoStatusBadge() {
     const badge = document.getElementById('day-auto-status');
     const indicator = document.getElementById('day-auto-status-indicator');
@@ -485,8 +571,25 @@ class StudyApp {
     const mdContainer = document.getElementById('markdown-container');
     const notesContainer = document.getElementById('notes-container');
     const dsaPlayground = document.getElementById('dsa-playground-container');
+    const quizContainer = document.getElementById('daily-quiz-container');
     const loadingEl = document.getElementById('content-loading');
     const footerNav = document.getElementById('bottom-footer-nav');
+
+    if (this.currentModule === 'quiz') {
+      if (mdContainer) mdContainer.classList.add('hidden');
+      if (dsaPlayground) dsaPlayground.classList.add('hidden');
+      if (notesContainer) notesContainer.classList.add('hidden');
+      if (loadingEl) loadingEl.classList.add('hidden');
+      if (quizContainer) {
+        quizContainer.classList.remove('hidden');
+        this.renderDailyQuizView();
+      }
+      if (footerNav) footerNav.classList.remove('hidden');
+      this.updateReadingProgressUI(100);
+      return;
+    }
+
+    if (quizContainer) quizContainer.classList.add('hidden');
 
     if (this.currentModule === 'notes') {
       if (mdContainer) mdContainer.classList.add('hidden');
@@ -598,6 +701,22 @@ class StudyApp {
       this.enhanceRenderedMarkdown(mdContainer);
     } else {
       mdContainer.innerText = rawMarkdown;
+    }
+
+    // Restore scroll position so user continues exactly where they left off
+    const scrollKey = `${this.currentDay}-${this.currentModule}`;
+    const saved = this.scrollProgressMap && this.scrollProgressMap[scrollKey];
+    const scrollContainer = document.getElementById('main-content-scroll');
+    if (scrollContainer) {
+      if (saved && saved.scrollTop > 0) {
+        setTimeout(() => {
+          scrollContainer.scrollTop = saved.scrollTop;
+          this.updateReadingProgressUI(saved.pct || 0);
+        }, 70);
+      } else {
+        scrollContainer.scrollTop = 0;
+        this.updateReadingProgressUI(0);
+      }
     }
   }
 
@@ -1140,6 +1259,174 @@ class StudyApp {
       indicator.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i><span>Saved</span>`;
       this.refreshIcons();
     }
+  }
+
+  // ================= 40-DAY PROBLEM-DRIVEN DAILY QUIZZES =================
+  renderDailyQuizView() {
+    const quizData = (window.getDailyQuizForDay && window.getDailyQuizForDay(this.currentDay)) || {
+      day: this.currentDay,
+      title: `Day ${this.currentDay} Technical Quiz`,
+      questions: []
+    };
+
+    const dayBadge = document.getElementById('daily-quiz-day-badge');
+    const titleEl = document.getElementById('daily-quiz-title');
+    const scoreBadge = document.getElementById('daily-quiz-score-badge');
+    const questionsContainer = document.getElementById('daily-quiz-questions-list');
+    const pill = document.getElementById('daily-quiz-pill');
+
+    if (dayBadge) dayBadge.innerText = `Day ${this.currentDay} Technical Challenge (Problem-Driven)`;
+    if (titleEl) titleEl.innerText = quizData.title;
+
+    const existingScore = this.dailyQuizScoresMap[this.currentDay];
+    if (scoreBadge) {
+      if (existingScore) {
+        scoreBadge.innerText = `${existingScore.correct}/${existingScore.total} (${existingScore.score}%)`;
+        scoreBadge.className = existingScore.score >= 80 ? 'text-sage-400 font-bold' : 'text-terracotta-400 font-bold';
+      } else {
+        scoreBadge.innerText = `Pending (0/${quizData.questions.length})`;
+        scoreBadge.className = 'text-slate-400';
+      }
+    }
+
+    if (pill) {
+      if (existingScore) {
+        pill.innerText = `${existingScore.score}%`;
+        pill.className = `ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono ${existingScore.score >= 80 ? 'bg-sage-500/20 text-sage-400 border border-sage-500/30' : 'bg-terracotta-500/20 text-terracotta-400 border border-terracotta-500/30'}`;
+      } else {
+        pill.innerText = `${quizData.questions.length} Qs`;
+        pill.className = 'ml-1 px-1.5 py-0.2 rounded text-[10px] bg-surface-3 text-slate-400 font-mono';
+      }
+    }
+
+    if (!questionsContainer) return;
+    questionsContainer.innerHTML = '';
+
+    const currentAnswers = this.dailyQuizAnswers[this.currentDay] || {};
+
+    const escapeHtml = (str) => {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
+
+    quizData.questions.forEach((q, idx) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'p-4 rounded-lg bg-surface-2 border border-white/[0.08] space-y-3';
+
+      let codeHtml = '';
+      if (q.code) {
+        codeHtml = `<pre class="quiz-code-block"><code>${escapeHtml(q.code)}</code></pre>`;
+      }
+
+      let optionsHtml = q.options.map((opt, optIdx) => {
+        const isSelected = currentAnswers[idx] === optIdx;
+        let optClass = 'quiz-option-card flex items-start space-x-3 p-3 rounded-md border text-xs cursor-pointer transition select-none';
+        let badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold border border-white/[0.1] bg-surface-1 flex-shrink-0 mt-0.5">${String.fromCharCode(65 + optIdx)}</span>`;
+
+        if (isSelected) {
+          optClass += ' border-cyan-500/60 bg-cyan-500/15 text-white shadow-sm';
+          badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold bg-cyan-500 text-slate-950 flex-shrink-0 mt-0.5">${String.fromCharCode(65 + optIdx)}</span>`;
+        } else {
+          optClass += ' border-white/[0.06] bg-surface-1/70 hover:bg-surface-3 text-slate-300';
+        }
+
+        // If submitted or score exists, show feedback
+        if (existingScore) {
+          if (optIdx === q.correct) {
+            optClass = 'flex items-start space-x-3 p-3 rounded-md border text-xs select-none border-sage-500/50 bg-sage-500/20 text-sage-200 font-medium';
+            badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold bg-sage-500 text-slate-950 flex-shrink-0 mt-0.5">✓</span>`;
+          } else if (isSelected && optIdx !== q.correct) {
+            optClass = 'flex items-start space-x-3 p-3 rounded-md border text-xs select-none border-rose-500/50 bg-rose-500/20 text-rose-200';
+            badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold bg-rose-500 text-white flex-shrink-0 mt-0.5">✕</span>`;
+          }
+        }
+
+        return `
+          <div class="${optClass}" onclick="app.selectDailyQuizAnswer(${idx}, ${optIdx})">
+            ${badgeHtml}
+            <div class="leading-relaxed flex-1">${escapeHtml(opt)}</div>
+          </div>
+        `;
+      }).join('');
+
+      let explanationHtml = '';
+      if (existingScore) {
+        explanationHtml = `
+          <div class="p-3 rounded bg-surface-1 border border-white/[0.08] text-xs space-y-1.5 animate-fade-in mt-2">
+            <span class="font-bold text-sage-400 flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              Senior Engineering Verification:
+            </span>
+            <p class="text-slate-300 leading-relaxed font-sans">${escapeHtml(q.explanation)}</p>
+          </div>
+        `;
+      }
+
+      qDiv.innerHTML = `
+        <div class="flex items-center justify-between text-[11px] font-mono">
+          <span class="text-cyan-400 font-bold uppercase">Question ${idx + 1} of ${quizData.questions.length} • ${q.pillar}</span>
+        </div>
+        <h4 class="text-xs font-semibold text-white leading-relaxed font-sans">${escapeHtml(q.question)}</h4>
+        ${codeHtml}
+        <div class="space-y-2 pt-1">
+          ${optionsHtml}
+        </div>
+        ${explanationHtml}
+      `;
+
+      questionsContainer.appendChild(qDiv);
+    });
+
+    this.refreshIcons();
+  }
+
+  selectDailyQuizAnswer(qIdx, optIdx) {
+    if (!this.dailyQuizAnswers[this.currentDay]) {
+      this.dailyQuizAnswers[this.currentDay] = {};
+    }
+    this.dailyQuizAnswers[this.currentDay][qIdx] = optIdx;
+    this.renderDailyQuizView();
+  }
+
+  submitDailyQuiz() {
+    const quizData = (window.getDailyQuizForDay && window.getDailyQuizForDay(this.currentDay));
+    if (!quizData) return;
+
+    const answers = this.dailyQuizAnswers[this.currentDay] || {};
+    const total = quizData.questions.length;
+    let correct = 0;
+
+    quizData.questions.forEach((q, idx) => {
+      if (answers[idx] === q.correct) {
+        correct++;
+      }
+    });
+
+    const score = Math.round((correct / total) * 100);
+    this.dailyQuizScoresMap[this.currentDay] = {
+      score,
+      correct,
+      total,
+      submittedAt: new Date().toISOString()
+    };
+    this.saveStorage('sde_daily_quiz_scores', this.dailyQuizScoresMap);
+
+    this.renderDailyQuizView();
+    this.renderSidebar();
+    this.updateGlobalProgress();
+
+    if (score >= 80 && window.confetti) {
+      try { confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } }); } catch (e) {}
+    }
+
+    alert(`🎉 Day ${this.currentDay} Quiz Submitted!\n\nScore: ${correct}/${total} (${score}%)\n\nDetailed engineering explanations have been unlocked below.`);
+  }
+
+  resetCurrentDayQuiz() {
+    delete this.dailyQuizAnswers[this.currentDay];
+    delete this.dailyQuizScoresMap[this.currentDay];
+    this.saveStorage('sde_daily_quiz_scores', this.dailyQuizScoresMap);
+    this.renderDailyQuizView();
+    this.renderSidebar();
   }
 
   // ================= QUIZ ENGINE =================
@@ -1736,6 +2023,9 @@ class StudyApp {
         const pct = `${Math.round((completedCount / 6) * 100)}%`;
         const notes = this.notesMap[d] || '';
 
+        const readingPct = `${this.getDayReadingPct(d)}%`;
+        const quizScore = this.dailyQuizScoresMap[d] ? `${this.dailyQuizScoresMap[d].score}%` : 'Pending';
+
         rowData.push({
           'Day #': d,
           'Phase': phase,
@@ -1749,6 +2039,8 @@ class StudyApp {
           'Drills': drills,
           'Done / 6': completedCount,
           'Day %': pct,
+          'Reading %': readingPct,
+          'Daily Quiz': quizScore,
           'Notes': notes
         });
       }
@@ -1767,7 +2059,7 @@ class StudyApp {
   exportToCSV() {
     try {
       const days = this.data.days || {};
-      const headers = ['Day #', 'Phase', 'Topic Title', 'Status', 'DSA', 'Backend', 'Frontend', 'Docker', 'AI', 'Drills', 'Done / 6', 'Day %', 'Notes'];
+      const headers = ['Day #', 'Phase', 'Topic Title', 'Status', 'DSA', 'Backend', 'Frontend', 'Docker', 'AI', 'Drills', 'Done / 6', 'Day %', 'Reading %', 'Daily Quiz', 'Notes'];
       const rows = [headers];
 
       for (let d = 1; d <= 40; d++) {
@@ -1786,9 +2078,11 @@ class StudyApp {
         const completedCount = [dsa, be, fe, docker, ai, drills].filter(x => x === 'Y').length;
         const status = completedCount === 6 ? 'Completed' : (completedCount > 0 ? 'In Progress' : 'Not Started');
         const pct = `${Math.round((completedCount / 6) * 100)}%`;
+        const readingPct = `"${this.getDayReadingPct(d)}%"`;
+        const quizScore = `"${this.dailyQuizScoresMap[d] ? this.dailyQuizScoresMap[d].score + '%' : 'Pending'}"`;
         const notes = `"${(this.notesMap[d] || '').replace(/"/g, '""')}"`;
 
-        rows.push([d, phase, title, status, dsa, be, fe, docker, ai, drills, completedCount, pct, notes]);
+        rows.push([d, phase, title, status, dsa, be, fe, docker, ai, drills, completedCount, pct, readingPct, quizScore, notes]);
       }
 
       const csvContent = rows.map(e => e.join(',')).join('\n');
