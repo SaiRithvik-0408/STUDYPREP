@@ -383,7 +383,7 @@ class StudyApp {
 
     this.renderDayChecklist();
     this.renderSidebar();
-    this.loadModuleContent();
+    this.selectModuleTab(this.currentModule || 'overview');
 
     const scrollContainer = document.getElementById('main-content-scroll');
     if (scrollContainer) scrollContainer.scrollTop = 0;
@@ -648,8 +648,12 @@ class StudyApp {
 
     const dsaToggle = document.getElementById('dsa-submode-toggle');
     if (dsaToggle) {
-      if (moduleKey === 'dsa') dsaToggle.classList.remove('hidden');
-      else dsaToggle.classList.add('hidden');
+      if (moduleKey === 'dsa') {
+        dsaToggle.classList.remove('hidden');
+        this.setDsaSubmode(this.dsaSubmode || 'doc');
+      } else {
+        dsaToggle.classList.add('hidden');
+      }
     }
 
     this.updateFooterNavButton();
@@ -657,22 +661,26 @@ class StudyApp {
   }
 
   setDsaSubmode(mode) {
-    this.dsaSubmode = mode;
+    this.dsaSubmode = mode || 'doc';
     const btnDoc = document.getElementById('btn-dsa-submode-doc');
     const btnEditor = document.getElementById('btn-dsa-submode-editor');
     const footerNav = document.getElementById('bottom-footer-nav');
 
-    if (mode === 'doc') {
-      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center space-x-1 transition';
-      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition';
-      document.getElementById('dsa-playground-container').classList.add('hidden');
-      document.getElementById('markdown-container').classList.remove('hidden');
+    if (this.dsaSubmode === 'doc') {
+      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center space-x-1 transition text-[11px]';
+      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition text-[11px] border border-transparent';
+      const playground = document.getElementById('dsa-playground-container');
+      const mdContainer = document.getElementById('markdown-container');
+      if (playground) playground.classList.add('hidden');
+      if (mdContainer) mdContainer.classList.remove('hidden');
       if (footerNav) footerNav.classList.remove('hidden');
     } else {
-      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition';
-      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-semibold bg-sage-500/20 text-sage-400 border border-sage-500/30 flex items-center space-x-1 transition';
-      document.getElementById('markdown-container').classList.add('hidden');
-      document.getElementById('dsa-playground-container').classList.remove('hidden');
+      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition text-[11px] border border-transparent';
+      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-semibold bg-sage-500/20 text-sage-400 border border-sage-500/30 flex items-center space-x-1 transition text-[11px]';
+      const playground = document.getElementById('dsa-playground-container');
+      const mdContainer = document.getElementById('markdown-container');
+      if (mdContainer) mdContainer.classList.add('hidden');
+      if (playground) playground.classList.remove('hidden');
       if (footerNav) footerNav.classList.add('hidden'); // Hide footer in playground so editor takes full vertical space!
       this.initDsaPlayground();
     }
@@ -2379,7 +2387,7 @@ class StudyApp {
           if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
           if (modeBadge) {
             modeBadge.innerText = 'GPT-4o Mini (Paid)';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/25';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25';
           }
         }
       }
@@ -2498,7 +2506,7 @@ class StudyApp {
         if (keyInput) keyInput.placeholder = 'sk-...';
         if (modeBadge) {
           modeBadge.innerText = 'GPT-4o Mini (Paid)';
-          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/25';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25';
         }
       } else if (this.agentProvider === 'ollama') {
         if (keyLabel) keyLabel.innerText = 'Ollama Endpoint URL:';
@@ -2599,7 +2607,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     if (this.agentChatHistory.length === 0) {
       container.innerHTML = `
         <div class="flex items-start space-x-2.5">
-          <div class="w-6 h-6 rounded bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+          <div class="w-6 h-6 rounded bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 mt-0.5">
             <i data-lucide="bot" class="w-3.5 h-3.5"></i>
           </div>
           <div class="bg-surface-2 p-3 rounded-lg rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 max-w-[90%]">
@@ -2644,7 +2652,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
       if (msg.role === 'user') {
         html += `
           <div class="flex justify-end">
-            <div class="bg-purple-600/25 text-purple-200 border border-purple-500/35 p-2.5 rounded-lg rounded-tr-none max-w-[85%] leading-relaxed font-sans text-xs">
+            <div class="bg-rose-600/25 text-rose-200 border border-rose-500/35 p-2.5 rounded-lg rounded-tr-none max-w-[85%] leading-relaxed font-sans text-xs">
               ${escapeText(msg.text)}
             </div>
           </div>
@@ -2653,7 +2661,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
         const parsedMd = window.marked ? marked.parse(msg.text) : msg.text;
         html += `
           <div class="flex items-start space-x-2.5">
-            <div class="w-6 h-6 rounded bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+            <div class="w-6 h-6 rounded bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 mt-0.5">
               <i data-lucide="bot" class="w-3.5 h-3.5"></i>
             </div>
             <div class="bg-surface-2 p-3 rounded-lg rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 max-w-[90%] markdown-body text-xs">

@@ -30,6 +30,14 @@
   --accent-cyan: #0EA5E9;
   --accent-cyan-dim: rgba(14, 165, 233, 0.15);
   
+  /* Global Red Accents (Replaced Purple Theme) */
+  --accent-red: #EF4444;
+  --accent-red-bright: #F87171;
+  --accent-red-dim: rgba(239, 68, 68, 0.15);
+  --accent-red-glow: rgba(239, 68, 68, 0.35);
+  --accent-red-border: rgba(239, 68, 68, 0.45);
+  --accent-red-hover: #DC2626;
+  
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
@@ -796,20 +804,20 @@ code, pre, .font-mono {
   padding: 0.625rem 1.125rem !important;
   border-radius: 9999px !important;
   background-color: #121A2A !important;
-  border: 1px solid rgba(168, 85, 247, 0.45) !important;
-  color: #D8B4FE !important;
+  border: 1px solid var(--accent-red-border, rgba(239, 68, 68, 0.45)) !important;
+  color: var(--accent-red-bright, #FCA5A5) !important;
   font-family: var(--font-sans) !important;
   font-size: 0.8125rem !important;
   font-weight: 600 !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 15px rgba(168, 85, 247, 0.25) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 15px var(--accent-red-glow, rgba(239, 68, 68, 0.25)) !important;
   cursor: pointer !important;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, background-color 0.2s !important;
 }
 #floating-ai-btn:hover {
   transform: translateY(-2px) scale(1.03) !important;
   background-color: #1A2438 !important;
-  border-color: rgba(168, 85, 247, 0.7) !important;
-  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.8), 0 0 25px rgba(168, 85, 247, 0.4) !important;
+  border-color: rgba(239, 68, 68, 0.8) !important;
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.8), 0 0 25px var(--accent-red-glow, rgba(239, 68, 68, 0.45)) !important;
 }
 
 #agent-drawer {
@@ -925,9 +933,9 @@ code, pre, .font-mono {
   box-sizing: border-box !important;
 }
 #agent-prompt-input:focus {
-  border-color: #A855F7 !important;
+  border-color: var(--accent-red, #EF4444) !important;
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 0 0 2px var(--accent-red-glow, rgba(239, 68, 68, 0.25)) !important;
 }
 
 /* Daily Quiz Code Problem Styling */
@@ -1046,6 +1054,18 @@ code, pre, .font-mono {
   white-space: nowrap !important;
   flex-shrink: 0 !important;
 }
+
+/* Red Accent Theme Overrides (Replaces Purple Globally) */
+.text-purple-400 { color: #F87171 !important; }
+.bg-purple-500\/15 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.bg-purple-500\/20 { background-color: rgba(239, 68, 68, 0.2) !important; }
+.border-purple-500\/30 { border-color: rgba(239, 68, 68, 0.3) !important; }
+.border-purple-500\/40 { border-color: rgba(239, 68, 68, 0.4) !important; }
+.hover\:border-purple-500\/40:hover { border-color: rgba(239, 68, 68, 0.4) !important; }
+.group:hover .group-hover\:text-purple-400 { color: #F87171 !important; }
+.bg-purple-400 { background-color: #EF4444 !important; }
+.bg-purple-600 { background-color: #DC2626 !important; }
+.hover\:bg-purple-500:hover { background-color: #EF4444 !important; }
 
 
 
