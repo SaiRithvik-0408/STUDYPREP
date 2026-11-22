@@ -179,9 +179,9 @@ class StudyApp {
       const viewEl = document.getElementById(`view-${v}`);
       if (btn) {
         if (v === viewName) {
-          btn.className = 'nav-tab active flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all bg-cyan-500/15 text-cyan-400 border border-cyan-500/25';
+          btn.className = 'nav-tab active flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-sm';
         } else {
-          btn.className = 'nav-tab flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-slate-200 transition-all';
+          btn.className = 'nav-tab flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 transition-all border border-transparent';
         }
       }
       if (viewEl) {
@@ -234,7 +234,7 @@ class StudyApp {
       }
 
       const phaseCard = document.createElement('div');
-      phaseCard.className = 'rounded-md border border-white/[0.08] bg-surface-2/40 overflow-hidden';
+      phaseCard.className = 'rounded-xl border border-white/[0.08] bg-surface-2/40 overflow-hidden mb-1.5';
 
       const isOpen = this.phaseOpenState[phase.id] || false;
       const completedInPhase = phaseDays.filter(d => this.statusMap[d.day] === 'completed').length;
@@ -246,7 +246,7 @@ class StudyApp {
         <div class="flex-1 pr-2 truncate">
           <div class="flex items-center space-x-1.5">
             <span class="text-xs font-bold text-slate-200">Phase ${phase.number}</span>
-            <span class="text-[9px] px-1 py-0.2 rounded font-mono ${completedInPhase === phaseDays.length ? 'bg-sage-500/20 text-sage-400' : 'bg-surface-3 text-slate-400'}">${completedInPhase}/${phaseDays.length}</span>
+            <span class="text-[9px] px-2 py-0.5 rounded-full font-mono ${completedInPhase === phaseDays.length ? 'bg-sage-500/20 text-sage-400' : 'bg-surface-3 text-slate-400'}">${completedInPhase}/${phaseDays.length}</span>
           </div>
           <p class="text-[10px] text-slate-400 truncate max-w-[170px] font-sans">${phase.title}</p>
         </div>
@@ -273,10 +273,10 @@ class StudyApp {
           }
 
           const dayBtn = document.createElement('button');
-          dayBtn.className = `w-full text-left px-2 py-1.5 rounded text-xs flex items-center justify-between transition ${
+          dayBtn.className = `sidebar-day-btn w-full text-left px-2.5 py-1.5 rounded-xl text-xs flex items-center justify-between transition ${
             isActive 
-              ? 'bg-cyan-500/15 border border-cyan-500/30 text-white font-medium' 
-              : 'hover:bg-surface-2 text-slate-300'
+              ? 'active bg-rose-500/15 border border-rose-500/35 text-white font-medium shadow-sm' 
+              : 'hover:bg-surface-2 text-slate-300 rounded-xl'
           }`;
           dayBtn.onclick = () => {
             this.selectDay(dayItem.day);
@@ -286,8 +286,8 @@ class StudyApp {
 
           dayBtn.innerHTML = `
             <div class="flex items-center space-x-1.5 truncate pr-1">
-              <span class="text-[9px] font-mono px-1 py-0.5 rounded ${isActive ? 'bg-cyan-500 text-void font-bold' : 'bg-surface-3 text-slate-400'}">D${dayItem.day}</span>
-              <span class="truncate text-[11px] font-sans">${dayItem.title}</span>
+              <span class="sidebar-day-badge text-[9px] font-mono px-2 py-0.5 rounded-full ${isActive ? 'active bg-gradient-to-r from-red-500 to-rose-500 text-white font-bold shadow-sm' : 'inactive bg-surface-3 text-slate-400'}">D${dayItem.day}</span>
+              <span class="truncate text-[11px] font-sans ${isActive ? 'text-white font-medium' : 'text-slate-300'}">${dayItem.title}</span>
             </div>
             <span class="text-[10px] ${statusColorClass} flex-shrink-0 font-mono">${statusDot}</span>
           `;
@@ -295,13 +295,13 @@ class StudyApp {
         });
 
         const quizBtn = document.createElement('button');
-        quizBtn.className = 'w-full mt-1.5 text-center py-1 rounded text-[10px] font-mono font-semibold text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 flex items-center justify-center space-x-1 transition';
+        quizBtn.className = 'w-full mt-1.5 text-center py-1 rounded-xl text-[10px] font-mono font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center space-x-1 transition';
         quizBtn.onclick = () => {
           this.switchView('quizzes');
           this.loadQuiz(phase.id);
         };
         quizBtn.innerHTML = `
-          <i data-lucide="award" class="w-3 h-3"></i>
+          <i data-lucide="award" class="w-3 h-3 text-rose-400"></i>
           <span>Phase ${phase.number} Milestone Quiz</span>
         `;
         listDiv.appendChild(quizBtn);
@@ -324,9 +324,9 @@ class StudyApp {
     this.statusFilter = filter;
     document.querySelectorAll('.status-filter-btn').forEach(btn => {
       if (btn.dataset.status === filter) {
-        btn.className = 'status-filter-btn active px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 font-medium whitespace-nowrap';
+        btn.className = 'status-filter-btn active px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 font-semibold border border-rose-500/30 whitespace-nowrap';
       } else {
-        btn.className = 'status-filter-btn px-2 py-0.5 rounded text-slate-400 hover:bg-surface-2 whitespace-nowrap';
+        btn.className = 'status-filter-btn px-2.5 py-0.5 rounded-full text-slate-400 hover:bg-surface-2 border border-transparent whitespace-nowrap';
       }
     });
     this.renderSidebar();
@@ -619,9 +619,9 @@ class StudyApp {
     textSpan.innerText = isDone ? action.done : action.notDone;
 
     if (isDone) {
-      btn.className = 'flex items-center space-x-1.5 px-4 py-2 rounded-md bg-surface-3 hover:bg-slate-700 border border-cyan-500/30 text-xs font-mono font-semibold text-cyan-300 transition shadow-md';
+      btn.className = 'flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-surface-3 hover:bg-slate-700 border border-rose-500/35 text-xs font-mono font-semibold text-rose-300 transition shadow-md';
     } else {
-      btn.className = 'flex items-center space-x-1.5 px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-600 text-xs font-mono font-semibold text-void transition shadow-md';
+      btn.className = 'flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 text-xs font-mono font-bold text-white transition shadow-lg shadow-red-950/40';
     }
   }
 
@@ -633,10 +633,10 @@ class StudyApp {
     let activeTabEl = null;
     document.querySelectorAll('.module-tab').forEach(tab => {
       if (tab.dataset.module === moduleKey) {
-        tab.className = 'module-tab active flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-cyan-400 bg-cyan-500/15 border border-cyan-500/25 whitespace-nowrap';
+        tab.className = 'module-tab active flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-400 bg-rose-500/15 border border-rose-500/30 whitespace-nowrap shadow-sm';
         activeTabEl = tab;
       } else {
-        tab.className = 'module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap';
+        tab.className = 'module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap';
       }
     });
 
@@ -667,8 +667,8 @@ class StudyApp {
     const footerNav = document.getElementById('bottom-footer-nav');
 
     if (this.dsaSubmode === 'doc') {
-      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center space-x-1 transition text-[11px]';
-      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition text-[11px] border border-transparent';
+      if (btnDoc) btnDoc.className = 'px-2 py-0.5 rounded-md font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center space-x-1 transition text-[11px]';
+      if (btnEditor) btnEditor.className = 'px-2 py-0.5 rounded-md font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition text-[11px] border border-transparent';
       const playground = document.getElementById('dsa-playground-container');
       const mdContainer = document.getElementById('markdown-container');
       if (playground) playground.classList.add('hidden');
@@ -949,14 +949,14 @@ class StudyApp {
     `).join('');
 
     mdContainer.innerHTML = `
-      <div class="bg-surface-1 p-6 rounded-lg border border-white/[0.08] space-y-4">
+      <div class="bg-surface-1 p-6 rounded-xl border border-white/[0.08] space-y-4">
         <div>
-          <span class="text-[10px] font-mono text-cyan-400">File: ${path}</span>
+          <span class="text-[10px] font-mono text-rose-400">File: ${path}</span>
           <h1 class="font-display text-xl font-bold text-white mt-0.5">${title}</h1>
         </div>
         <p class="text-xs text-slate-300 leading-relaxed">${summary}</p>
         
-        <div class="p-4 rounded bg-surface-2 border border-white/[0.06] space-y-2">
+        <div class="p-4 rounded-lg bg-surface-2 border border-white/[0.06] space-y-2">
           <h3 class="text-xs font-mono font-bold text-white uppercase tracking-wider">Core Mastery Objectives:</h3>
           <ul class="space-y-1.5 text-xs">
             ${checklistHtml}
@@ -987,9 +987,9 @@ class StudyApp {
       problems.forEach((prob, idx) => {
         const btn = document.createElement('button');
         const isActive = !this.customActiveProblem && idx === this.activeProblemIdx;
-        btn.className = `px-2.5 py-1 rounded text-xs font-mono font-medium transition ${
+        btn.className = `px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition ${
           isActive 
-            ? 'bg-cyan-500 text-void font-bold shadow-sm' 
+            ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold shadow-sm' 
             : 'bg-surface-2 border border-white/[0.08] text-slate-400 hover:text-white'
         }`;
         btn.innerText = `${prob.number}. ${prob.title.split('-')[0].trim()}`;
@@ -1446,8 +1446,8 @@ class StudyApp {
         let badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold border border-white/[0.1] bg-surface-1 flex-shrink-0 mt-0.5">${String.fromCharCode(65 + optIdx)}</span>`;
 
         if (isSelected) {
-          optClass += ' border-cyan-500/60 bg-cyan-500/15 text-white shadow-sm';
-          badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold bg-cyan-500 text-slate-950 flex-shrink-0 mt-0.5">${String.fromCharCode(65 + optIdx)}</span>`;
+          optClass += ' border-rose-500/60 bg-rose-500/15 text-white shadow-sm';
+          badgeHtml = `<span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold bg-gradient-to-r from-red-600 to-rose-600 text-white flex-shrink-0 mt-0.5">${String.fromCharCode(65 + optIdx)}</span>`;
         } else {
           optClass += ' border-white/[0.06] bg-surface-1/70 hover:bg-surface-3 text-slate-300';
         }
@@ -1486,7 +1486,7 @@ class StudyApp {
 
       qDiv.innerHTML = `
         <div class="flex items-center justify-between text-[11px] font-mono">
-          <span class="text-cyan-400 font-bold uppercase">Question ${idx + 1} of ${quizData.questions.length} • ${q.pillar}</span>
+          <span class="text-rose-400 font-bold uppercase">Question ${idx + 1} of ${quizData.questions.length} • ${q.pillar}</span>
         </div>
         <h4 class="text-xs font-semibold text-white leading-relaxed font-sans">${escapeHtml(q.question)}</h4>
         ${codeHtml}
@@ -1561,9 +1561,9 @@ class StudyApp {
 
     document.querySelectorAll('.quiz-phase-btn').forEach(btn => {
       if (btn.dataset.quiz === quizId) {
-        btn.className = 'quiz-phase-btn active px-2.5 py-1 rounded text-cyan-400 bg-cyan-500/15';
+        btn.className = 'quiz-phase-btn active px-3 py-1 rounded-lg text-rose-400 bg-rose-500/15 border border-rose-500/30 font-semibold';
       } else {
-        btn.className = 'quiz-phase-btn px-2.5 py-1 rounded text-slate-400 hover:text-slate-200';
+        btn.className = 'quiz-phase-btn px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 border border-transparent';
       }
     });
 
@@ -1615,7 +1615,7 @@ class StudyApp {
           cardStyle += ' opacity-40 border-white/[0.04]';
         }
       } else {
-        cardStyle += ' border-white/[0.08] hover:border-cyan-500/40';
+        cardStyle += ' border-white/[0.08] hover:border-rose-500/40';
       }
 
       card.className = cardStyle;
@@ -1827,7 +1827,7 @@ class StudyApp {
       card.innerHTML = `
         <div class="flex items-center justify-between">
           <div>
-            <span class="text-[10px] font-mono text-cyan-400">Phase ${phase.number}</span>
+            <span class="text-[10px] font-mono text-rose-400">Phase ${phase.number}</span>
             <h3 class="text-xs font-bold text-white mt-0.5">${phase.title}</h3>
           </div>
           <span class="text-xs font-mono font-bold ${pPct === 100 ? 'text-sage-400' : 'text-slate-400'}">${pPct}%</span>
@@ -1852,14 +1852,14 @@ class StudyApp {
 
     const widget = document.createElement('div');
     widget.id = 'interactive-drill-widget';
-    widget.className = 'mt-8 p-5 rounded-xl bg-surface-1 border border-cyan-500/30 shadow-lg space-y-4';
+    widget.className = 'mt-8 p-5 rounded-xl bg-surface-1 border border-rose-500/30 shadow-lg space-y-4';
     widget.innerHTML = `
       <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div class="flex items-center space-x-2 text-cyan-400">
+        <div class="flex items-center space-x-2 text-rose-400">
           <i data-lucide="play-circle" class="w-5 h-5"></i>
           <h3 class="font-display font-bold text-sm text-white">Interactive Event Loop Execution Simulator</h3>
         </div>
-        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">Live VM State</span>
+        <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">Live VM State</span>
       </div>
 
       <p class="text-xs text-slate-300 leading-relaxed">
@@ -1870,7 +1870,7 @@ class StudyApp {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
         <div class="p-3 rounded-lg bg-surface-2 border border-white/[0.08]">
           <div class="flex items-center justify-between text-slate-400 border-b border-white/[0.06] pb-1.5 mb-2">
-            <span class="font-bold text-cyan-400">1. Call Stack</span>
+            <span class="font-bold text-rose-400">1. Call Stack</span>
             <span id="sim-stack-count" class="text-[10px] text-slate-500">Idle</span>
           </div>
           <div id="sim-call-stack" class="min-h-[70px] flex flex-col justify-end space-y-1 text-slate-300 text-[11px]">
@@ -1903,7 +1903,7 @@ class StudyApp {
       <div class="p-3 rounded-lg bg-void border border-white/[0.08] font-mono text-xs">
         <div class="flex items-center justify-between text-slate-500 pb-1 mb-1 border-b border-white/[0.06]">
           <span>Terminal Stdout:</span>
-          <span id="sim-step-indicator" class="text-cyan-400 text-[11px]">Ready (Step 0/8)</span>
+          <span id="sim-step-indicator" class="text-rose-400 text-[11px]">Ready (Step 0/8)</span>
         </div>
         <div id="sim-stdout" class="text-sage-400 font-semibold tracking-wide text-xs">
           [Click 'Step Execution' or 'Run All' to start simulation]
@@ -1913,7 +1913,7 @@ class StudyApp {
 
       <!-- Controls -->
       <div class="flex items-center gap-2 pt-1">
-        <button id="btn-sim-step" class="px-3.5 py-1.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+        <button id="btn-sim-step" class="px-3.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/40 text-xs font-semibold transition flex items-center gap-1.5">
           <i data-lucide="step-forward" class="w-3.5 h-3.5"></i>
           <span>Step Execution</span>
         </button>
@@ -2029,7 +2029,7 @@ class StudyApp {
 
       if (stackEl) {
         stackEl.innerHTML = data.stack.length > 0 
-          ? data.stack.map(s => `<div class="p-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">${s}</div>`).join('')
+          ? data.stack.map(s => `<div class="p-1 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30">${s}</div>`).join('')
           : '<div class="text-slate-600 italic">Call Stack Idle</div>';
       }
       if (stackCount) stackCount.innerText = `${data.stack.length} frame(s)`;
@@ -2381,7 +2381,7 @@ class StudyApp {
           if (keyLabel) keyLabel.innerText = 'Google Gemini API Key (Free):';
           if (modeBadge) {
             modeBadge.innerText = 'Gemini Free Tier';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/25';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25';
           }
         } else if (select.value === 'openai') {
           if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
@@ -2499,7 +2499,7 @@ class StudyApp {
         if (keyInput) keyInput.placeholder = 'AIzaSy...';
         if (modeBadge) {
           modeBadge.innerText = 'Gemini Free Tier';
-          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/25';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25';
         }
       } else if (this.agentProvider === 'openai') {
         if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
@@ -2623,12 +2623,12 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
               <li><strong>AI</strong>: Tokens, BPE, structured JSON schemas, RAG, agents</li>
             </ul>
 
-            <div class="mt-2 p-2.5 rounded bg-surface-1 border border-cyan-500/30 flex items-center justify-between text-xs font-mono">
+            <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-rose-500/30 flex items-center justify-between text-xs font-mono">
               <div>
-                <span class="text-cyan-400 font-bold block">✨ Google Gemini Cloud AI</span>
+                <span class="text-rose-400 font-bold block">✨ Google Gemini Cloud AI</span>
                 <span class="text-[10px] text-slate-400">100% Free • Unlimited Conversations</span>
               </div>
-              <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded text-[11px] transition">
+              <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-[11px] transition shadow-sm">
                 Connect Key
               </button>
             </div>

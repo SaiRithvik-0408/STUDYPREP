@@ -22,9 +22,29 @@
               },
               hairline: 'rgba(255, 255, 255, 0.08)',
               cyan: {
-                400: '#38BDF8',
-                500: '#0EA5E9',
-                600: '#0284C7'
+                300: '#FDA4AF',
+                400: '#F87171',
+                500: '#EF4444',
+                600: '#DC2626'
+              },
+              red: {
+                400: '#F87171',
+                500: '#EF4444',
+                600: '#DC2626',
+                700: '#B91C1C'
+              },
+              rose: {
+                300: '#FDA4AF',
+                400: '#FB7185',
+                500: '#F43F5E',
+                600: '#E11D48',
+                700: '#BE123C'
+              },
+              crimson: {
+                300: '#FF758F',
+                400: '#FF4D6D',
+                500: '#E01E37',
+                600: '#C71F37'
               },
               sage: {
                 400: '#34D399',
@@ -77,37 +97,37 @@
   <!-- Custom App Styles -->
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-void text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-white">
+<body class="bg-void text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-red-500 selection:text-white">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
   <header class="sticky top-0 z-40 w-full bg-surface-1/95 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between border-b border-white/[0.08]">
     <div class="flex items-center space-x-3">
       <!-- Mobile Sidebar Toggle -->
-      <button id="mobile-sidebar-toggle" class="lg:hidden p-1.5 rounded-md bg-surface-2 hover:bg-surface-3 text-slate-300 border border-white/[0.08]">
+      <button id="mobile-sidebar-toggle" class="lg:hidden p-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 text-slate-300 border border-white/[0.08]">
         <i data-lucide="menu" class="w-4 h-4"></i>
       </button>
 
       <!-- App Logo & Branding -->
       <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.switchView('curriculum')">
-        <div class="w-7 h-7 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+        <div class="w-7 h-7 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
           <i data-lucide="cpu" class="w-4 h-4"></i>
         </div>
         <div>
           <div class="flex items-center space-x-2">
             <span class="font-display font-bold text-sm tracking-tight text-white">SDE-Mastery 40</span>
-            <span class="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-400 border border-white/[0.08]">v2.1</span>
+            <span class="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded-full bg-white/[0.06] text-slate-400 border border-white/[0.08]">v2.1</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Center Navigation Tabs -->
-    <nav class="hidden md:flex items-center space-x-1 bg-surface-2 p-1 rounded-md border border-white/[0.08]">
-      <button id="nav-btn-curriculum" onclick="app.switchView('curriculum')" class="nav-tab active flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all bg-cyan-500/15 text-cyan-400 border border-cyan-500/25">
+    <nav class="hidden md:flex items-center space-x-1 bg-surface-2 p-1 rounded-xl border border-white/[0.08]">
+      <button id="nav-btn-curriculum" onclick="app.switchView('curriculum')" class="nav-tab active flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-sm">
         <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
         <span>Curriculum Guides</span>
       </button>
-      <button id="nav-btn-dashboard" onclick="app.switchView('dashboard')" class="nav-tab flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-medium text-slate-400 hover:text-slate-200 transition-all">
+      <button id="nav-btn-dashboard" onclick="app.switchView('dashboard')" class="nav-tab flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-all">
         <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
         <span>Dashboard</span>
       </button>
@@ -116,21 +136,21 @@
     <!-- Right Global Progress & Controls -->
     <div class="flex items-center space-x-2.5">
       <!-- Overall Progress Bar -->
-      <div class="hidden sm:flex items-center space-x-2.5 bg-surface-2 border border-white/[0.08] px-2.5 py-1 rounded-md font-mono text-xs">
-        <div class="w-20 bg-surface-3 rounded-sm h-1.5 overflow-hidden">
-          <div id="global-progress-bar" class="bg-sage-500 h-full rounded-sm transition-all duration-300" style="width: 0%"></div>
+      <div class="hidden sm:flex items-center space-x-2.5 bg-surface-2 border border-white/[0.08] px-2.5 py-1 rounded-lg font-mono text-xs">
+        <div class="w-20 bg-surface-3 rounded-full h-1.5 overflow-hidden">
+          <div id="global-progress-bar" class="bg-gradient-to-r from-red-500 to-rose-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
         <span id="global-progress-text" class="text-[11px] text-slate-300">0% (0/40)</span>
       </div>
 
       <!-- AI Doubt Solver Agent Button -->
-      <button onclick="app.toggleAgentDrawer()" title="Ask AI Doubt Solver Agent" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 text-xs font-semibold transition shadow-sm">
+      <button onclick="app.toggleAgentDrawer()" title="Ask AI Doubt Solver Agent" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 text-xs font-semibold transition shadow-sm">
         <i data-lucide="bot" class="w-3.5 h-3.5"></i>
         <span class="font-sans">AI Tutor</span>
       </button>
 
       <!-- Multi-Device Sync & Export Button -->
-      <button onclick="app.openExportModal()" title="Sync & Export Progress (Excel / CSV / Cloud)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-400 border border-cyan-500/30 text-xs font-semibold transition shadow-sm">
+      <button onclick="app.openExportModal()" title="Sync & Export Progress (Excel / CSV / Cloud)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-semibold transition shadow-sm">
         <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
         <span class="font-sans">Sync & Export</span>
       </button>
@@ -148,19 +168,19 @@
         <div class="relative">
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500"></i>
           <input type="text" id="day-search-input" placeholder="Filter days, topics..."
-                 class="w-full pl-8 pr-7 py-1.5 bg-surface-2 border border-white/[0.08] rounded-md text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                 class="w-full pl-8 pr-7 py-1.5 bg-surface-2 border border-white/[0.08] rounded-full text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500/50"
                  oninput="app.filterDays()">
-          <button id="search-clear-btn" class="hidden absolute right-2 top-2 text-slate-500 hover:text-slate-300" onclick="app.clearSearch()">
+          <button id="search-clear-btn" class="hidden absolute right-2.5 top-2 text-slate-500 hover:text-slate-300" onclick="app.clearSearch()">
             <i data-lucide="x" class="w-3 h-3"></i>
           </button>
         </div>
 
         <!-- Status Filter Pills -->
         <div class="flex items-center space-x-1 text-[11px] overflow-x-auto pb-0.5 scrollbar-none font-mono">
-          <button class="status-filter-btn active px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 font-medium whitespace-nowrap" data-status="all" onclick="app.setStatusFilter('all')">All</button>
-          <button class="status-filter-btn px-2 py-0.5 rounded text-slate-400 hover:bg-surface-2 whitespace-nowrap" data-status="completed" onclick="app.setStatusFilter('completed')">Done</button>
-          <button class="status-filter-btn px-2 py-0.5 rounded text-slate-400 hover:bg-surface-2 whitespace-nowrap" data-status="in-progress" onclick="app.setStatusFilter('in-progress')">Prog</button>
-          <button class="status-filter-btn px-2 py-0.5 rounded text-slate-400 hover:bg-surface-2 whitespace-nowrap" data-status="not-started" onclick="app.setStatusFilter('not-started')">New</button>
+          <button class="status-filter-btn active px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 font-semibold border border-rose-500/30 whitespace-nowrap" data-status="all" onclick="app.setStatusFilter('all')">All</button>
+          <button class="status-filter-btn px-2.5 py-0.5 rounded-full text-slate-400 hover:bg-surface-2 whitespace-nowrap" data-status="completed" onclick="app.setStatusFilter('completed')">Done</button>
+          <button class="status-filter-btn px-2.5 py-0.5 rounded-full text-slate-400 hover:bg-surface-2 whitespace-nowrap" data-status="in-progress" onclick="app.setStatusFilter('in-progress')">Prog</button>
+          <button class="status-filter-btn px-2.5 py-0.5 rounded-full text-slate-400 hover:bg-surface-2 whitespace-nowrap" data-status="not-started" onclick="app.setStatusFilter('not-started')">New</button>
         </div>
       </div>
 
@@ -184,7 +204,7 @@
             
             <!-- Left Side: Task Description (Phase Badge + Day Title) -->
             <div class="min-w-0 flex-1">
-              <div class="flex items-center space-x-2 text-[11px] font-mono text-cyan-400 mb-0.5">
+              <div class="flex items-center space-x-2 text-[11px] font-mono text-rose-400 mb-0.5">
                 <span id="current-day-phase-badge">Phase 1: Foundations</span>
                 <span>•</span>
                 <span id="current-day-number-badge">Day 1 of 40</span>
@@ -195,23 +215,23 @@
             <!-- Right Side: Status Badge, Mark Day Done, and Prev/Next Navigation Arrows -->
             <div class="flex items-center gap-2 flex-shrink-0 ml-auto">
               <!-- Status Pill -->
-              <div id="day-auto-status" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-xs font-mono" title="Day Progress Status">
+              <div id="day-auto-status" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-surface-2 border border-white/[0.08] text-xs font-mono" title="Day Progress Status">
                 <span id="day-auto-status-indicator">⚪</span>
                 <span id="day-auto-status-text" class="text-slate-300">Not Started (0/6)</span>
               </div>
 
               <!-- Mark Day Done Button -->
-              <button onclick="app.markEntireDayDone()" class="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-[11px] font-mono text-slate-300 hover:text-white transition whitespace-nowrap" title="Mark all 6 sections for this day as completed">
+              <button onclick="app.markEntireDayDone()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-[11px] font-mono text-slate-300 hover:text-white transition whitespace-nowrap" title="Mark all 6 sections for this day as completed">
                 <i data-lucide="check-check" class="w-3.5 h-3.5 text-sage-400"></i>
                 <span>Mark Day Done</span>
               </button>
 
               <!-- Day Prev / Next Buttons -->
               <div class="flex items-center space-x-1">
-                <button id="btn-prev-day" onclick="app.navigateDay(-1)" class="p-1.5 rounded-md bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Previous Day">
+                <button id="btn-prev-day" onclick="app.navigateDay(-1)" class="p-1.5 rounded-lg bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Previous Day">
                   <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
                 </button>
-                <button id="btn-next-day" onclick="app.navigateDay(1)" class="p-1.5 rounded-md bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Next Day">
+                <button id="btn-next-day" onclick="app.navigateDay(1)" class="p-1.5 rounded-lg bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Next Day">
                   <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
@@ -223,21 +243,21 @@
             
             <!-- Left Side: Module Tabs (Flexible, horizontally scrollable inside track, never pushes right controls off-screen) -->
             <div id="module-tabs-track" class="flex items-center space-x-1 overflow-x-auto scrollbar-none min-w-0 flex-1 py-0.5">
-              <button onclick="app.selectModuleTab('overview')" class="module-tab active flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-cyan-400 bg-cyan-500/15 border border-cyan-500/25 whitespace-nowrap" data-module="overview">
+              <button onclick="app.selectModuleTab('overview')" class="module-tab active flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-400 bg-rose-500/15 border border-rose-500/30 whitespace-nowrap shadow-sm" data-module="overview">
                 <i data-lucide="book" class="w-3 h-3"></i>
                 <span>Overview</span>
               </button>
 
               <!-- Checkable Core Tabs -->
-              <button onclick="app.selectModuleTab('dsa')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="dsa">
-                <i data-lucide="code-2" class="w-3 h-3 text-cyan-400"></i>
+              <button onclick="app.selectModuleTab('dsa')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="dsa">
+                <i data-lucide="code-2" class="w-3 h-3 text-red-400"></i>
                 <span>DSA</span>
                 <span class="tab-check-pill inline-flex items-center justify-center ml-0.5" onclick="event.stopPropagation(); app.toggleChecklistModule('dsa')" title="Toggle DSA done">
                   <span class="tab-check-box unchecked" data-check-mod="dsa"></span>
                 </span>
               </button>
 
-              <button onclick="app.selectModuleTab('be')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="be">
+              <button onclick="app.selectModuleTab('be')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="be">
                 <i data-lucide="server" class="w-3 h-3 text-sage-400"></i>
                 <span>Backend</span>
                 <span class="tab-check-pill inline-flex items-center justify-center ml-0.5" onclick="event.stopPropagation(); app.toggleChecklistModule('be')" title="Toggle Backend done">
@@ -245,15 +265,15 @@
                 </span>
               </button>
 
-              <button onclick="app.selectModuleTab('fe')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="fe">
-                <i data-lucide="layout" class="w-3 h-3 text-cyan-400"></i>
+              <button onclick="app.selectModuleTab('fe')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="fe">
+                <i data-lucide="layout" class="w-3 h-3 text-rose-400"></i>
                 <span>Frontend</span>
                 <span class="tab-check-pill inline-flex items-center justify-center ml-0.5" onclick="event.stopPropagation(); app.toggleChecklistModule('fe')" title="Toggle Frontend done">
                   <span class="tab-check-box unchecked" data-check-mod="fe"></span>
                 </span>
               </button>
 
-              <button onclick="app.selectModuleTab('docker')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="docker">
+              <button onclick="app.selectModuleTab('docker')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="docker">
                 <i data-lucide="container" class="w-3 h-3 text-rose-400"></i>
                 <span>Docker</span>
                 <span class="tab-check-pill inline-flex items-center justify-center ml-0.5" onclick="event.stopPropagation(); app.toggleChecklistModule('docker')" title="Toggle Docker done">
@@ -261,7 +281,7 @@
                 </span>
               </button>
 
-              <button onclick="app.selectModuleTab('ai')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="ai">
+              <button onclick="app.selectModuleTab('ai')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="ai">
                 <i data-lucide="sparkles" class="w-3 h-3 text-pink-400"></i>
                 <span>AI</span>
                 <span class="tab-check-pill inline-flex items-center justify-center ml-0.5" onclick="event.stopPropagation(); app.toggleChecklistModule('ai')" title="Toggle AI done">
@@ -269,7 +289,7 @@
                 </span>
               </button>
 
-              <button onclick="app.selectModuleTab('others')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="others">
+              <button onclick="app.selectModuleTab('others')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="others">
                 <i data-lucide="check-circle" class="w-3 h-3 text-terracotta-400"></i>
                 <span>Drills</span>
                 <span class="tab-check-pill inline-flex items-center justify-center ml-0.5" onclick="event.stopPropagation(); app.toggleChecklistModule('others')" title="Toggle Drills done">
@@ -277,13 +297,13 @@
                 </span>
               </button>
 
-              <button onclick="app.selectModuleTab('quiz')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="quiz">
+              <button onclick="app.selectModuleTab('quiz')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="quiz">
                 <i data-lucide="help-circle" class="w-3 h-3 text-sage-400"></i>
                 <span>Daily Quiz</span>
-                <span id="daily-quiz-pill" class="ml-0.5 px-1 py-0.2 rounded text-[9px] bg-surface-3 text-slate-400 font-mono">5 Qs</span>
+                <span id="daily-quiz-pill" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[9px] bg-surface-3 text-slate-400 font-mono">5 Qs</span>
               </button>
 
-              <button onclick="app.selectModuleTab('notes')" class="module-tab flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="notes">
+              <button onclick="app.selectModuleTab('notes')" class="module-tab flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap" data-module="notes">
                 <i data-lucide="edit-3" class="w-3 h-3 text-slate-400"></i>
                 <span>Notes</span>
               </button>
@@ -292,21 +312,21 @@
             <!-- Right Side: Pinned Controls (Fixed inside screen, never cut off) -->
             <div class="flex items-center space-x-1.5 flex-shrink-0 pl-1.5 border-l border-white/[0.08]">
               <!-- Reading Scroll Progress Indicator -->
-              <div id="reading-progress-pill" class="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-[11px] font-mono text-cyan-400 flex-shrink-0" title="Reading completion based on scroll">
-                <i data-lucide="book-open" class="w-3 h-3 text-cyan-400"></i>
+              <div id="reading-progress-pill" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-2 border border-white/[0.08] text-[11px] font-mono text-rose-400 flex-shrink-0" title="Reading completion based on scroll">
+                <i data-lucide="book-open" class="w-3 h-3 text-rose-400"></i>
                 <span id="reading-progress-text">0% Read</span>
                 <div class="w-8 bg-surface-3 h-1.5 rounded-full overflow-hidden ml-0.5 hidden sm:block">
-                  <div id="reading-progress-bar" class="bg-cyan-500 h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+                  <div id="reading-progress-bar" class="bg-gradient-to-r from-red-500 to-rose-500 h-full rounded-full transition-all duration-150" style="width: 0%"></div>
                 </div>
               </div>
 
               <!-- DSA Submode Switcher (visible when in DSA tab) -->
-              <div id="dsa-submode-toggle" class="hidden flex items-center bg-surface-2 border border-white/[0.08] rounded-md p-0.5 text-[11px] font-mono flex-shrink-0">
-                <button id="btn-dsa-submode-doc" onclick="app.setDsaSubmode('doc')" class="px-2 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center space-x-1 transition">
+              <div id="dsa-submode-toggle" class="hidden flex items-center bg-surface-2 border border-white/[0.08] rounded-lg p-0.5 text-[11px] font-mono flex-shrink-0">
+                <button id="btn-dsa-submode-doc" onclick="app.setDsaSubmode('doc')" class="px-2 py-0.5 rounded-md font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center space-x-1 transition">
                   <i data-lucide="book-open" class="w-2.5 h-2.5"></i>
                   <span>Theory</span>
                 </button>
-                <button id="btn-dsa-submode-editor" onclick="app.setDsaSubmode('editor')" class="px-2 py-0.5 rounded font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition border border-transparent">
+                <button id="btn-dsa-submode-editor" onclick="app.setDsaSubmode('editor')" class="px-2 py-0.5 rounded-md font-medium text-slate-400 hover:text-white flex items-center space-x-1 transition border border-transparent">
                   <i data-lucide="terminal" class="w-2.5 h-2.5"></i>
                   <span>Playground</span>
                 </button>
@@ -321,7 +341,7 @@
           
           <!-- Loading State Spinner -->
           <div id="content-loading" class="hidden py-24 flex flex-col items-center justify-center space-y-3">
-            <div class="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+            <div class="w-8 h-8 border-2 border-rose-500/20 border-t-rose-500 rounded-full animate-spin"></div>
             <p class="text-xs font-mono text-slate-400">Loading curriculum manuscript...</p>
           </div>
 
@@ -344,25 +364,25 @@
                 </div>
 
                 <!-- Jump to any LeetCode Question Number Input -->
-                <div class="flex items-center space-x-1.5 bg-surface-2 border border-white/[0.08] px-2 py-1 rounded-md font-mono text-xs">
-                  <span class="text-cyan-400 font-bold">LC #</span>
+                <div class="flex items-center space-x-1.5 bg-surface-2 border border-white/[0.08] px-2 py-1 rounded-lg font-mono text-xs">
+                  <span class="text-rose-400 font-bold">LC #</span>
                   <input type="number" id="custom-lc-input" placeholder="e.g. 1, 15, 200..." min="1" max="3500" 
                          class="w-28 bg-transparent text-white placeholder-slate-500 focus:outline-none text-xs font-mono"
                          onkeydown="if(event.key==='Enter') app.loadLeetCodeByNumber()">
-                  <button onclick="app.loadLeetCodeByNumber()" class="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 text-[11px] font-bold transition">Load</button>
+                  <button onclick="app.loadLeetCodeByNumber()" class="px-2 py-0.5 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 text-[11px] font-bold transition">Load</button>
                 </div>
               </div>
 
               <!-- Language & External Links -->
               <div class="flex items-center space-x-2.5">
                 <a id="btn-open-leetcode" href="https://leetcode.com" target="_blank" rel="noopener noreferrer"
-                   class="px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/30 hover:bg-terracotta-500/25 flex items-center space-x-1 transition"
+                   class="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/30 hover:bg-terracotta-500/25 flex items-center space-x-1 transition"
                    title="Open problem in official LeetCode">
                   <span>Open on LeetCode</span>
                   <i data-lucide="external-link" class="w-3 h-3"></i>
                 </a>
 
-                <div class="flex items-center space-x-1.5 bg-surface-2 border border-white/[0.08] px-2 py-0.5 rounded-md font-mono text-xs">
+                <div class="flex items-center space-x-1.5 bg-surface-2 border border-white/[0.08] px-2 py-0.5 rounded-lg font-mono text-xs">
                   <span class="text-[11px] text-slate-400">Language:</span>
                   <select id="code-lang-selector" onchange="app.changeCodeLanguage(this.value)"
                           class="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer">
@@ -377,14 +397,14 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch min-h-[calc(100vh-270px)]">
               
               <!-- LEFT COLUMN: Problem Details, Hints, Complexity (5 Cols) -->
-              <div class="lg:col-span-5 bg-surface-1 border border-white/[0.08] rounded-lg p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-270px)]">
+              <div class="lg:col-span-5 bg-surface-1 border border-white/[0.08] rounded-xl p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-270px)]">
                 
                 <div class="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
                   <div class="flex items-center space-x-2">
-                    <span id="playground-problem-diff" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-sage-500/15 text-sage-400 border border-sage-500/30">Easy</span>
+                    <span id="playground-problem-diff" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-sage-500/15 text-sage-400 border border-sage-500/30">Easy</span>
                     <span id="playground-problem-num" class="text-xs font-mono text-slate-400">LC #167</span>
                   </div>
-                  <span id="playground-problem-complexity" class="text-[10px] font-mono text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">O(N) Time • O(1) Space</span>
+                  <span id="playground-problem-complexity" class="text-[10px] font-mono text-rose-400 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20">O(N) Time • O(1) Space</span>
                 </div>
 
                 <div>
@@ -395,13 +415,13 @@
                 </div>
 
                 <!-- Approach Summary Banner -->
-                <div id="playground-problem-approach-banner" class="p-2.5 rounded bg-surface-2 border border-white/[0.08] text-xs">
+                <div id="playground-problem-approach-banner" class="p-2.5 rounded-lg bg-surface-2 border border-white/[0.08] text-xs">
                   <div class="text-[10px] font-mono uppercase text-slate-400 font-semibold">Recommended Pattern:</div>
                   <div id="playground-problem-approach" class="text-slate-200 font-medium mt-0.5">Two Pointers</div>
                 </div>
 
                 <!-- Hints Accordion -->
-                <div class="border border-white/[0.08] rounded-md overflow-hidden bg-surface-2/60">
+                <div class="border border-white/[0.08] rounded-lg overflow-hidden bg-surface-2/60">
                   <button onclick="app.toggleHintsAccordion()" class="w-full px-3 py-2 text-left flex items-center justify-between text-xs font-mono font-semibold text-slate-300 hover:bg-surface-3 transition">
                     <span class="flex items-center space-x-1.5">
                       <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-terracotta-400"></i>
@@ -421,21 +441,21 @@
               </div>
 
               <!-- RIGHT COLUMN: Code Editor, Test Runner & Output (7 Cols) -->
-              <div class="lg:col-span-7 bg-surface-1 border border-white/[0.08] rounded-lg flex flex-col overflow-hidden max-h-[calc(100vh-270px)]">
+              <div class="lg:col-span-7 bg-surface-1 border border-white/[0.08] rounded-xl flex flex-col overflow-hidden max-h-[calc(100vh-270px)]">
                 
                 <!-- Editor Top Header -->
                 <div class="bg-surface-2 border-b border-white/[0.08] px-3 py-2 flex items-center justify-between flex-shrink-0">
                   <div class="flex items-center space-x-2 text-xs font-mono text-slate-300">
-                    <i data-lucide="file-code" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <i data-lucide="file-code" class="w-3.5 h-3.5 text-rose-400"></i>
                     <span id="editor-filename">solution.js</span>
                     <span class="text-[10px] text-slate-500">• Type your solution below</span>
                   </div>
                   
                   <div class="flex items-center space-x-1.5 font-mono text-xs">
-                    <button onclick="app.resetCodeEditor()" class="px-2 py-1 rounded text-slate-400 hover:text-white hover:bg-surface-3 transition" title="Clear and reset skeleton boilerplate">
+                    <button onclick="app.resetCodeEditor()" class="px-2 py-1 rounded-md text-slate-400 hover:text-white hover:bg-surface-3 transition" title="Clear and reset skeleton boilerplate">
                       <i data-lucide="rotate-ccw" class="w-3 h-3 inline mr-1"></i>Reset
                     </button>
-                    <button onclick="app.showSolutionCode()" class="px-2 py-1 rounded text-cyan-400 hover:bg-cyan-500/10 transition" title="Reveal reference solution">
+                    <button onclick="app.showSolutionCode()" class="px-2 py-1 rounded-md text-rose-400 hover:bg-rose-500/10 transition" title="Reveal reference solution">
                       <i data-lucide="sparkles" class="w-3 h-3 inline mr-1"></i>Solution
                     </button>
                   </div>
@@ -473,7 +493,7 @@
                       <span id="test-runtime-display" class="text-[10px] text-slate-400 font-mono">Runtime: 12 ms</span>
                     </div>
                     <div class="text-slate-300">
-                      <div><strong>Output: </strong><span id="test-actual-output" class="text-cyan-300">--</span></div>
+                      <div><strong>Output: </strong><span id="test-actual-output" class="text-rose-300">--</span></div>
                     </div>
                     <div id="test-stdout-wrapper" class="hidden pt-1 border-t border-white/[0.06]">
                       <span class="text-[9px] text-slate-500 uppercase tracking-wider block">Stdout Logs:</span>
@@ -485,11 +505,11 @@
                   <div class="flex items-center justify-between pt-1">
                     <span class="text-[10px] font-mono text-slate-500">Shortcut: Shift + Enter</span>
                     <div class="flex items-center space-x-2">
-                      <button onclick="app.runCode(false)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-surface-3 hover:bg-slate-700 text-xs font-mono font-semibold text-slate-200 border border-white/[0.08] transition">
+                      <button onclick="app.runCode(false)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-slate-700 text-xs font-mono font-semibold text-slate-200 border border-white/[0.08] transition">
                         <i data-lucide="play" class="w-3 h-3 text-sage-400 fill-sage-400"></i>
                         <span>Run Code</span>
                       </button>
-                      <button onclick="app.runCode(true)" class="flex items-center space-x-1.5 px-4 py-1.5 rounded-md bg-sage-500 hover:bg-sage-600 text-xs font-mono font-semibold text-void transition">
+                      <button onclick="app.runCode(true)" class="flex items-center space-x-1.5 px-4 py-1.5 rounded-lg bg-sage-500 hover:bg-sage-600 text-xs font-mono font-semibold text-void transition">
                         <i data-lucide="check" class="w-3.5 h-3.5 text-void"></i>
                         <span>Submit</span>
                       </button>
@@ -505,7 +525,7 @@
           <div id="notes-container" class="hidden max-w-4xl mx-auto space-y-4">
             <div class="flex items-center justify-between">
               <h2 class="font-display text-base font-bold text-white flex items-center space-x-2">
-                <i data-lucide="notebook-pen" class="w-4 h-4 text-cyan-400"></i>
+                <i data-lucide="notebook-pen" class="w-4 h-4 text-rose-400"></i>
                 <span id="notes-day-label">Personal Study Notes</span>
               </h2>
               <span id="notes-save-indicator" class="text-xs font-mono text-sage-400 flex items-center space-x-1">
@@ -514,16 +534,16 @@
               </span>
             </div>
             <textarea id="day-notes-textarea" rows="16" placeholder="Record your notes, edge-case gotchas, or interview reminders..."
-                      class="w-full p-3.5 rounded-md bg-surface-1 border border-white/[0.08] text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500/50"
+                      class="w-full p-3.5 rounded-xl bg-surface-1 border border-white/[0.08] text-slate-200 text-xs font-mono focus:outline-none focus:border-red-500/50"
                       oninput="app.saveCurrentDayNotes()"></textarea>
           </div>
 
           <!-- ================= DAILY QUIZ CONTAINER ================= -->
           <div id="daily-quiz-container" class="hidden max-w-4xl mx-auto space-y-4">
-            <div class="bg-surface-1 rounded-lg p-5 border border-white/[0.08] space-y-4">
+            <div class="bg-surface-1 rounded-xl p-5 border border-white/[0.08] space-y-4">
               <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                 <div>
-                  <span id="daily-quiz-day-badge" class="text-[10px] font-mono text-cyan-400 uppercase font-bold">Day 1 Technical Challenge</span>
+                  <span id="daily-quiz-day-badge" class="text-[10px] font-mono text-rose-400 uppercase font-bold">Day 1 Technical Challenge</span>
                   <h2 id="daily-quiz-title" class="text-base font-bold text-white mt-0.5">Daily Problem Quiz</h2>
                 </div>
                 <div class="flex items-center space-x-2 text-xs font-mono">
@@ -554,13 +574,13 @@
               <span>Previous Day</span>
             </button>
             <div class="flex items-center space-x-2.5">
-              <button onclick="app.selectModuleTab('quiz')" class="flex items-center space-x-1.5 px-4 py-2 rounded-md bg-surface-2 hover:bg-surface-3 border border-sage-500/30 text-sage-400 text-xs font-mono font-medium transition">
+              <button onclick="app.selectModuleTab('quiz')" class="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-surface-2 hover:bg-surface-3 border border-sage-500/30 text-sage-400 text-xs font-mono font-medium transition">
                 <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
                 <span>Take Daily Quiz</span>
               </button>
-              <button id="btn-mark-done-next" onclick="app.markCurrentSectionDoneAndNext()" class="flex items-center space-x-1.5 px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-600 text-xs font-mono font-semibold text-void transition shadow-md">
+              <button id="btn-mark-done-next" onclick="app.markCurrentSectionDoneAndNext()" class="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 text-xs font-mono font-semibold text-white transition shadow-lg shadow-red-950/40">
                 <span id="btn-mark-done-text">Mark Done & Next</span>
-                <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-void"></i>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-white"></i>
               </button>
             </div>
           </div>
@@ -575,26 +595,26 @@
             <p class="text-xs font-mono text-slate-400 mt-0.5">Real senior technical interview questions across all 5 core pillars.</p>
           </div>
 
-          <div class="flex items-center space-x-1 bg-surface-2 p-1 rounded-md border border-white/[0.08] text-xs font-mono">
-            <button onclick="app.loadQuiz('phase-1')" class="quiz-phase-btn active px-2.5 py-1 rounded text-cyan-400 bg-cyan-500/15" data-quiz="phase-1">Phase 1</button>
-            <button onclick="app.loadQuiz('phase-2')" class="quiz-phase-btn px-2.5 py-1 rounded text-slate-400 hover:text-slate-200" data-quiz="phase-2">Phase 2</button>
-            <button onclick="app.loadQuiz('phase-3')" class="quiz-phase-btn px-2.5 py-1 rounded text-slate-400 hover:text-slate-200" data-quiz="phase-3">Phase 3</button>
-            <button onclick="app.loadQuiz('phase-4')" class="quiz-phase-btn px-2.5 py-1 rounded text-slate-400 hover:text-slate-200" data-quiz="phase-4">Phase 4</button>
+          <div class="flex items-center space-x-1 bg-surface-2 p-1 rounded-xl border border-white/[0.08] text-xs font-mono">
+            <button onclick="app.loadQuiz('phase-1')" class="quiz-phase-btn active px-2.5 py-1 rounded-lg text-rose-400 bg-rose-500/15" data-quiz="phase-1">Phase 1</button>
+            <button onclick="app.loadQuiz('phase-2')" class="quiz-phase-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200" data-quiz="phase-2">Phase 2</button>
+            <button onclick="app.loadQuiz('phase-3')" class="quiz-phase-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200" data-quiz="phase-3">Phase 3</button>
+            <button onclick="app.loadQuiz('phase-4')" class="quiz-phase-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200" data-quiz="phase-4">Phase 4</button>
           </div>
         </div>
 
         <!-- Active Quiz Card -->
-        <div id="quiz-active-card" class="bg-surface-1 rounded-lg p-5 border border-white/[0.08] space-y-5">
+        <div id="quiz-active-card" class="bg-surface-1 rounded-xl p-5 border border-white/[0.08] space-y-5">
           <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
             <div>
-              <span id="quiz-question-number" class="text-xs font-mono font-bold text-cyan-400 uppercase">Question 1 of 10</span>
+              <span id="quiz-question-number" class="text-xs font-mono font-bold text-rose-400 uppercase">Question 1 of 10</span>
               <h2 id="quiz-pillar-badge" class="text-xs font-medium text-slate-400 mt-0.5">Pillar: Data Structures & Algorithms</h2>
             </div>
             <div class="flex items-center space-x-3 text-xs font-mono">
               <span class="text-slate-400">Score: <strong id="quiz-live-score" class="text-sage-400">0</strong></span>
               <span class="text-slate-600">|</span>
               <label class="flex items-center space-x-1.5 cursor-pointer text-slate-400 hover:text-slate-200">
-                <input type="checkbox" id="instant-feedback-toggle" checked class="rounded border-slate-700 bg-surface-2 text-cyan-500">
+                <input type="checkbox" id="instant-feedback-toggle" checked class="rounded border-slate-700 bg-surface-2 text-rose-500">
                 <span class="text-[11px]">Instant Feedback</span>
               </label>
             </div>
@@ -605,7 +625,7 @@
             <div id="quiz-options-container" class="space-y-2 pt-1"></div>
           </div>
 
-          <div id="quiz-explanation-box" class="hidden p-3.5 rounded bg-surface-2 border border-white/[0.08] space-y-1.5 text-xs animate-fade-in">
+          <div id="quiz-explanation-box" class="hidden p-3.5 rounded-lg bg-surface-2 border border-white/[0.08] space-y-1.5 text-xs animate-fade-in">
             <div class="flex items-center space-x-1.5 font-bold" id="quiz-explanation-header">
               <i data-lucide="info" class="w-3.5 h-3.5"></i>
               <span>Engineering Verification:</span>
@@ -614,17 +634,17 @@
           </div>
 
           <div class="pt-3 border-t border-white/[0.06] flex items-center justify-between">
-            <button id="btn-quiz-prev" onclick="app.prevQuizQuestion()" class="px-3 py-1.5 rounded bg-surface-2 hover:bg-surface-3 text-xs font-mono text-slate-300 border border-white/[0.08] disabled:opacity-30">
+            <button id="btn-quiz-prev" onclick="app.prevQuizQuestion()" class="px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs font-mono text-slate-300 border border-white/[0.08] disabled:opacity-30">
               Previous
             </button>
-            <button id="btn-quiz-next" onclick="app.nextQuizQuestion()" class="px-4 py-1.5 rounded bg-cyan-500 hover:bg-cyan-600 text-xs font-mono font-semibold text-void">
+            <button id="btn-quiz-next" onclick="app.nextQuizQuestion()" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-xs font-mono font-semibold text-white shadow-md">
               Next Question
             </button>
           </div>
         </div>
 
         <!-- Quiz Completion Results Card -->
-        <div id="quiz-results-card" class="hidden bg-surface-1 rounded-lg p-6 border border-white/[0.08] text-center space-y-5">
+        <div id="quiz-results-card" class="hidden bg-surface-1 rounded-xl p-6 border border-white/[0.08] text-center space-y-5">
           <div class="w-12 h-12 rounded-full bg-sage-500/10 text-sage-400 border border-sage-500/30 flex items-center justify-center mx-auto">
             <i data-lucide="trophy" class="w-6 h-6"></i>
           </div>
@@ -633,7 +653,7 @@
             <p id="quiz-result-subtitle" class="text-xs font-mono text-slate-400 mt-1"></p>
           </div>
 
-          <div class="inline-flex flex-col items-center justify-center p-4 rounded bg-surface-2 border border-white/[0.08] min-w-[160px]">
+          <div class="inline-flex flex-col items-center justify-center p-4 rounded-xl bg-surface-2 border border-white/[0.08] min-w-[160px]">
             <span id="quiz-result-score-percent" class="text-4xl font-mono font-black text-sage-400">90%</span>
             <span id="quiz-result-score-detail" class="text-xs font-mono text-slate-400 mt-1">9/10 Correct</span>
           </div>
@@ -641,14 +661,15 @@
           <div id="quiz-pillar-breakdown" class="max-w-sm mx-auto space-y-2 text-left pt-1"></div>
 
           <div class="pt-4 flex items-center justify-center gap-3">
-            <button onclick="app.retakeCurrentQuiz()" class="px-4 py-1.5 rounded bg-surface-2 border border-white/[0.08] text-xs font-mono text-slate-200 hover:bg-surface-3">
+            <button onclick="app.retakeCurrentQuiz()" class="px-4 py-1.5 rounded-xl bg-surface-2 border border-white/[0.08] text-xs font-mono text-slate-200 hover:bg-surface-3">
               Retake Quiz
             </button>
-            <button onclick="app.switchView('curriculum')" class="px-4 py-1.5 rounded bg-cyan-500 hover:bg-cyan-600 text-xs font-mono font-semibold text-void">
+            <button onclick="app.switchView('curriculum')" class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-xs font-mono font-semibold text-white shadow-md">
               Continue Curriculum
             </button>
           </div>
         </div>
+      </div>
       </div>
 
       <!-- ================= VIEW 3: PROGRESS DASHBOARD ================= -->
@@ -695,11 +716,11 @@
           <div class="bg-surface-1 p-3.5 rounded-lg border border-white/[0.08]">
             <span class="text-[10px] font-mono text-slate-400 uppercase">Quiz Average</span>
             <div class="mt-1 flex items-baseline space-x-1.5">
-              <span id="stat-quiz-avg" class="text-2xl font-mono font-bold text-cyan-400">--</span>
+              <span id="stat-quiz-avg" class="text-2xl font-mono font-bold text-rose-400">--</span>
               <span class="text-xs font-mono text-slate-500">Avg</span>
             </div>
             <div class="w-full bg-surface-3 h-1 rounded-sm mt-2 overflow-hidden">
-              <div id="stat-bar-quiz" class="bg-cyan-500 h-full rounded-sm" style="width: 0%"></div>
+              <div id="stat-bar-quiz" class="bg-gradient-to-r from-red-500 to-rose-500 h-full rounded-full" style="width: 0%"></div>
             </div>
           </div>
         </div>
@@ -711,23 +732,23 @@
 
         <div class="bg-surface-1 rounded-lg p-4 border border-white/[0.08] space-y-3">
           <h2 class="text-xs font-mono font-bold text-white uppercase flex items-center space-x-2">
-            <i data-lucide="database" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <i data-lucide="database" class="w-3.5 h-3.5 text-rose-400"></i>
             <span>Progress Storage & Data Backup</span>
           </h2>
           <p class="text-xs text-slate-400">
             Study status, checklists, and quiz achievements persist in browser LocalStorage.
           </p>
           <div class="flex flex-wrap items-center gap-2 pt-1">
-            <button onclick="app.exportProgress()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-xs font-mono text-slate-200">
+            <button onclick="app.exportProgress()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-xs font-mono text-slate-200">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
               <span>Export Backup (JSON)</span>
             </button>
-            <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-xs font-mono text-slate-200 cursor-pointer">
+            <label class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-xs font-mono text-slate-200 cursor-pointer">
               <i data-lucide="upload" class="w-3.5 h-3.5"></i>
               <span>Import Backup (JSON)</span>
               <input type="file" class="hidden" accept=".json" onchange="app.importProgress(event)">
             </label>
-            <button onclick="app.resetAllProgress()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-crimson-500/10 hover:bg-crimson-500/20 border border-crimson-500/30 text-xs font-mono text-crimson-400">
+            <button onclick="app.resetAllProgress()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-crimson-500/10 hover:bg-crimson-500/20 border border-crimson-500/30 text-xs font-mono text-crimson-400">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               <span>Reset</span>
             </button>
@@ -743,7 +764,7 @@
     <div class="bg-surface-1 border border-white/[0.12] rounded-xl max-w-lg w-full p-5 sm:p-6 mx-4 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
         <div class="flex items-center space-x-2.5 text-white">
-          <div class="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+          <div class="w-8 h-8 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
             <i data-lucide="cloud" class="w-4 h-4"></i>
           </div>
           <div>
@@ -771,13 +792,13 @@
         </button>
 
         <!-- Option 2: CSV Export -->
-        <button onclick="app.exportToCSV()" class="flex flex-col items-start p-3 rounded-lg bg-surface-2 hover:bg-surface-3 border border-white/[0.08] hover:border-cyan-500/40 text-left transition group">
+        <button onclick="app.exportToCSV()" class="flex flex-col items-start p-3 rounded-lg bg-surface-2 hover:bg-surface-3 border border-white/[0.08] hover:border-rose-500/40 text-left transition group">
           <div class="flex items-center justify-between w-full mb-1">
-            <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+            <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
               <i data-lucide="table" class="w-3.5 h-3.5"></i>
               Universal CSV (.csv)
             </span>
-            <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition"></i>
+            <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500 group-hover:text-rose-400 transition"></i>
           </div>
           <span class="text-[11px] text-slate-400">Lightweight spreadsheet format for Google Sheets and mobile office apps.</span>
         </button>
@@ -811,9 +832,9 @@
       <div class="pt-3 border-t border-white/[0.08] space-y-2">
         <label class="block text-xs font-medium text-slate-300">Restore Progress on This Device</label>
         <div class="flex items-center gap-2">
-          <input type="text" id="paste-import-input" placeholder="Paste backup JSON text here..." class="flex-1 px-3 py-1.5 bg-surface-2 border border-white/[0.08] rounded-md text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
-          <button onclick="app.importFromClipboardText()" class="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 border border-cyan-500/40 rounded-md text-xs font-medium transition whitespace-nowrap">Restore</button>
-          <label class="px-3 py-1.5 bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-slate-300 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1 whitespace-nowrap">
+          <input type="text" id="paste-import-input" placeholder="Paste backup JSON text here..." class="flex-1 px-3 py-1.5 bg-surface-2 border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-red-500">
+          <button onclick="app.importFromClipboardText()" class="px-3 py-1.5 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/40 rounded-lg text-xs font-medium transition whitespace-nowrap">Restore</button>
+          <label class="px-3 py-1.5 bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-slate-300 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 whitespace-nowrap">
             <i data-lucide="upload" class="w-3.5 h-3.5"></i>
             <span>File</span>
             <input type="file" id="modal-import-file-input" class="hidden" accept=".json" onchange="app.importProgress(event)">
@@ -865,7 +886,7 @@
       
       <div class="flex items-center space-x-1">
         <!-- Quick Gemini Key Connect Button -->
-        <button onclick="app.promptGeminiApiKey()" title="Enter or Update Free Gemini API Key" class="flex items-center space-x-1 px-2 py-1 rounded bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono transition">
+        <button onclick="app.promptGeminiApiKey()" title="Enter or Update Free Gemini API Key" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 text-[10px] font-mono transition">
           <i data-lucide="key" class="w-3 h-3"></i>
           <span id="gemini-key-status-label">Connect Gemini</span>
         </button>
@@ -897,11 +918,11 @@
       <div id="agent-api-key-container" class="hidden">
         <label class="block text-[10px] text-slate-400 mb-1" id="agent-api-key-label">API Key / Endpoint URL:</label>
         <div class="flex gap-1.5">
-          <input type="password" id="agent-api-key-input" placeholder="Paste your API key here (AIzaSy...)..." class="flex-1 px-2.5 py-1 bg-surface-1 border border-white/[0.1] rounded text-slate-200 text-xs focus:outline-none focus:border-cyan-500">
-          <button onclick="app.saveAgentSettings()" class="px-2.5 py-1 bg-cyan-500/20 text-cyan-400 rounded text-xs hover:bg-cyan-500/30">Save</button>
+          <input type="password" id="agent-api-key-input" placeholder="Paste your API key here (AIzaSy...)..." class="flex-1 px-2.5 py-1 bg-surface-1 border border-white/[0.1] rounded-lg text-slate-200 text-xs focus:outline-none focus:border-red-500">
+          <button onclick="app.saveAgentSettings()" class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs hover:bg-rose-500/30 border border-rose-500/30">Save</button>
         </div>
-        <div id="agent-gemini-hint" class="hidden text-[10px] text-cyan-400 pt-1">
-          👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="underline hover:text-cyan-300">Click here to get a 100% Free Gemini API Key</a> (No credit card needed, 1,500 free requests/day).
+        <div id="agent-gemini-hint" class="hidden text-[10px] text-rose-400 pt-1">
+          👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="underline hover:text-rose-300">Click here to get a 100% Free Gemini API Key</a> (No credit card needed, 1,500 free requests/day).
         </div>
       </div>
       <p class="text-[10px] text-slate-500 italic">Saved securely in your browser's localStorage. Built-in engine requires zero keys.</p>
@@ -943,12 +964,12 @@
             <li><strong>AI</strong>: Tokens, BPE, structured JSON schemas, RAG, agents</li>
           </ul>
           
-          <div class="mt-2 p-2.5 rounded bg-surface-1 border border-cyan-500/30 flex items-center justify-between text-xs font-mono">
+          <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-rose-500/30 flex items-center justify-between text-xs font-mono">
             <div>
-              <span class="text-cyan-400 font-bold block">✨ Google Gemini Cloud AI</span>
+              <span class="text-rose-400 font-bold block">✨ Google Gemini Cloud AI</span>
               <span class="text-[10px] text-slate-400">100% Free • Unlimited Conversations</span>
             </div>
-            <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded text-[11px] transition">
+            <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-[11px] transition shadow-sm">
               Connect Key
             </button>
           </div>
