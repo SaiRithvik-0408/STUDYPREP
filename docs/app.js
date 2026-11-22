@@ -397,37 +397,120 @@ class StudyApp {
     }
   }
 
+  // ================= SECTION & DAY COMPLETION =================
+  markCurrentSectionDoneAndNext() {
+    const mod = this.currentModule || 'overview';
+    const checkable = ['dsa', 'be', 'fe', 'docker', 'ai', 'others'];
+
+    // 1. If currently on a checkable module, mark this specific module as done
+    if (checkable.includes(mod)) {
+      this.checklistMap[`${this.currentDay}-${mod}`] = true;
+      this.saveStorage('sde_study_checklist', this.checklistMap);
+
+      const completedCount = checkable.filter(k => !!this.checklistMap[`${this.currentDay}-${k}`]).length;
+      if (completedCount === 6) {
+        this.statusMap[this.currentDay] = 'completed';
+        this.saveStorage('sde_study_status', this.statusMap);
+        if (window.confetti) {
+          try { confetti({ particleCount: 75, spread: 75, origin: { y: 0.65 } }); } catch (e) {}
+        }
+      } else if (completedCount > 0) {
+        this.statusMap[this.currentDay] = 'in-progress';
+        this.saveStorage('sde_study_status', this.statusMap);
+      }
+
+      this.renderDayChecklist();
+      this.updateAutoStatusBadge();
+      this.updateGlobalProgress();
+      this.renderSidebar();
+    }
+
+    // 2. Sequential progression to next section
+    const sequence = {
+      'overview': 'dsa',
+      'dsa': 'be',
+      'be': 'fe',
+      'fe': 'docker',
+      'docker': 'ai',
+      'ai': 'others',
+      'others': 'quiz',
+      'quiz': 'next-day',
+      'notes': 'overview'
+    };
+
+    const nextTarget = sequence[mod] || 'dsa';
+
+    if (nextTarget === 'next-day') {
+      if (this.currentDay < 40) {
+        this.selectDay(this.currentDay + 1);
+        this.selectModuleTab('overview');
+      } else {
+        alert('🎉 Incredible achievement! You have completed all 40 days of the SDE-Mastery curriculum!');
+      }
+    } else {
+      this.selectModuleTab(nextTarget);
+    }
+
+    // 3. Smooth scroll to top of content for the newly loaded section
+    const scrollContainer = document.getElementById('main-content-scroll');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  // Alias for backward compatibility
   markDayDoneAndNext() {
+    this.markCurrentSectionDoneAndNext();
+  }
+
+  // Mark all 6 core sections for this day as completed at once
+  markEntireDayDone() {
     const modules = ['dsa', 'be', 'fe', 'docker', 'ai', 'others'];
-    // 1. Mark all 6 daily modules as completed
     modules.forEach(m => {
       this.checklistMap[`${this.currentDay}-${m}`] = true;
     });
     this.saveStorage('sde_study_checklist', this.checklistMap);
-
-    // 2. Set day status to completed
     this.statusMap[this.currentDay] = 'completed';
     this.saveStorage('sde_study_status', this.statusMap);
 
-    // 3. Update badges, checklist checkboxes, sidebar and global progress
-    this.updateAutoStatusBadge();
     this.renderDayChecklist();
-    this.renderSidebar();
+    this.updateAutoStatusBadge();
     this.updateGlobalProgress();
+    this.renderSidebar();
+    this.updateFooterNavButton();
 
-    // 4. Confetti burst
     if (window.confetti) {
-      try { confetti({ particleCount: 65, spread: 65, origin: { y: 0.65 } }); } catch (e) {}
+      try { confetti({ particleCount: 75, spread: 75, origin: { y: 0.65 } }); } catch (e) {}
     }
+  }
 
-    // 5. Navigate to the next day
-    if (this.currentDay < 40) {
-      setTimeout(() => {
-        this.selectDay(this.currentDay + 1);
-      }, 350);
+  // Toggle single checklist module state on/off
+  toggleChecklistModule(moduleKey) {
+    const key = `${this.currentDay}-${moduleKey}`;
+    const newState = !this.checklistMap[key];
+    this.checklistMap[key] = newState;
+    this.saveStorage('sde_study_checklist', this.checklistMap);
+
+    const modules = ['dsa', 'be', 'fe', 'docker', 'ai', 'others'];
+    const completedCount = modules.filter(k => !!this.checklistMap[`${this.currentDay}-${k}`]).length;
+
+    if (completedCount === 6) {
+      this.statusMap[this.currentDay] = 'completed';
+      if (window.confetti) {
+        try { confetti({ particleCount: 65, spread: 65, origin: { y: 0.65 } }); } catch (e) {}
+      }
+    } else if (completedCount > 0) {
+      this.statusMap[this.currentDay] = 'in-progress';
     } else {
-      alert('🎉 Incredible achievement! You have completed all 40 days of the SDE-Mastery curriculum!');
+      this.statusMap[this.currentDay] = 'not-started';
     }
+    this.saveStorage('sde_study_status', this.statusMap);
+
+    this.renderDayChecklist();
+    this.updateAutoStatusBadge();
+    this.updateGlobalProgress();
+    this.renderSidebar();
+    this.updateFooterNavButton();
   }
 
   updateAutoStatusBadge() {
@@ -449,74 +532,86 @@ class StudyApp {
     }
 
     if (status === 'completed') {
-      badge.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-md bg-sage-500/20 border border-sage-500/40 text-xs font-mono text-sage-400 shadow-sm';
+      badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-sage-500/20 border border-sage-500/40 text-xs font-mono text-sage-400 shadow-sm';
       if (indicator) indicator.innerText = '🟢';
       if (text) text.innerText = 'Completed (6/6)';
     } else if (status === 'in-progress') {
-      badge.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-md bg-terracotta-500/20 border border-terracotta-500/40 text-xs font-mono text-terracotta-400 shadow-sm';
+      badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-terracotta-500/20 border border-terracotta-500/40 text-xs font-mono text-terracotta-400 shadow-sm';
       if (indicator) indicator.innerText = '🟡';
       if (text) text.innerText = `In Progress (${completedCount}/6)`;
     } else {
-      badge.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-xs font-mono text-slate-400';
+      badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-xs font-mono text-slate-400';
       if (indicator) indicator.innerText = '⚪';
       if (text) text.innerText = 'Not Started (0/6)';
     }
   }
 
-  // ================= DAY CHECKLIST =================
+  // ================= DAY CHECKLIST & UNIFIED TABS =================
   renderDayChecklist() {
-    const container = document.getElementById('day-checklist-items');
-    const summary = document.getElementById('day-checklist-summary');
-    if (!container) return;
-
-    container.innerHTML = '';
     const modules = ['dsa', 'be', 'fe', 'docker', 'ai', 'others'];
     const labels = { dsa: 'DSA', be: 'Backend', fe: 'Frontend', docker: 'Docker', ai: 'AI', others: 'Drills' };
-
     let completedCount = 0;
 
     modules.forEach(mKey => {
-      const checkKey = `${this.currentDay}-${mKey}`;
-      const isChecked = !!this.checklistMap[checkKey];
+      const isChecked = !!this.checklistMap[`${this.currentDay}-${mKey}`];
       if (isChecked) completedCount++;
 
-      const badge = document.createElement('label');
-      badge.className = `flex items-center space-x-1 px-2.5 py-1 rounded border text-[11px] cursor-pointer transition select-none ${
-        isChecked 
-          ? 'bg-sage-500/15 border-sage-500/30 text-sage-400 font-medium' 
-          : 'bg-surface-2 border-white/[0.08] text-slate-400 hover:border-slate-600'
-      }`;
-      badge.innerHTML = `
-        <input type="checkbox" ${isChecked ? 'checked' : ''} class="rounded border-slate-700 bg-surface-3 text-sage-500 focus:ring-0">
-        <span class="font-mono">${labels[mKey]}</span>
-      `;
-
-      badge.querySelector('input').addEventListener('change', (e) => {
-        this.checklistMap[checkKey] = e.target.checked;
-        this.saveStorage('sde_study_checklist', this.checklistMap);
-
-        const newCompleted = modules.filter(k => !!this.checklistMap[`${this.currentDay}-${k}`]).length;
-        if (newCompleted === 6) {
-          this.setDayStatus('completed');
-        } else if (newCompleted > 0) {
-          this.setDayStatus('in-progress');
+      const box = document.querySelector(`.tab-check-box[data-check-mod="${mKey}"]`);
+      if (box) {
+        if (isChecked) {
+          box.className = 'tab-check-box checked';
+          box.innerHTML = '✓';
+          if (box.parentElement) {
+            box.parentElement.setAttribute('title', `Done! Click to toggle ${labels[mKey]} incomplete`);
+          }
         } else {
-          this.setDayStatus('not-started');
+          box.className = 'tab-check-box unchecked';
+          box.innerHTML = '';
+          if (box.parentElement) {
+            box.parentElement.setAttribute('title', `Click to mark ${labels[mKey]} as done`);
+          }
         }
-
-        this.renderDayChecklist();
-        this.updateAutoStatusBadge();
-        this.updateGlobalProgress();
-        this.renderSidebar();
-      });
-
-      container.appendChild(badge);
+      }
     });
 
+    const summary = document.getElementById('day-checklist-summary');
     if (summary) {
       summary.innerText = `${completedCount}/6 Done`;
     }
+
     this.updateAutoStatusBadge();
+    this.updateFooterNavButton();
+  }
+
+  // Update footer button dynamically based on active module and completion status
+  updateFooterNavButton() {
+    const btn = document.getElementById('btn-mark-done-next');
+    const textSpan = document.getElementById('btn-mark-done-text');
+    if (!btn || !textSpan) return;
+
+    const mod = this.currentModule || 'overview';
+    const isDone = !!this.checklistMap[`${this.currentDay}-${mod}`];
+
+    const labelMap = {
+      'overview': { done: 'Start DSA Section →', notDone: 'Start DSA Section →' },
+      'dsa': { done: 'Next: Backend →', notDone: 'Mark DSA Done & Next →' },
+      'be': { done: 'Next: Frontend →', notDone: 'Mark Backend Done & Next →' },
+      'fe': { done: 'Next: Docker →', notDone: 'Mark Frontend Done & Next →' },
+      'docker': { done: 'Next: AI →', notDone: 'Mark Docker Done & Next →' },
+      'ai': { done: 'Next: Drills →', notDone: 'Mark AI Done & Next →' },
+      'others': { done: 'Take Daily Quiz →', notDone: 'Mark Drills Done & Quiz →' },
+      'quiz': { done: 'Next Day →', notDone: 'Complete Day & Next Day →' },
+      'notes': { done: 'Back to Overview →', notDone: 'Back to Overview →' }
+    };
+
+    const action = labelMap[mod] || { done: 'Next Section →', notDone: 'Mark Section Done & Next →' };
+    textSpan.innerText = isDone ? action.done : action.notDone;
+
+    if (isDone) {
+      btn.className = 'flex items-center space-x-1.5 px-4 py-2 rounded-md bg-surface-3 hover:bg-slate-700 border border-cyan-500/30 text-xs font-mono font-semibold text-cyan-300 transition shadow-md';
+    } else {
+      btn.className = 'flex items-center space-x-1.5 px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-600 text-xs font-mono font-semibold text-void transition shadow-md';
+    }
   }
 
   // ================= MODULE TABS & CONTENT LOADING =================
@@ -526,9 +621,9 @@ class StudyApp {
 
     document.querySelectorAll('.module-tab').forEach(tab => {
       if (tab.dataset.module === moduleKey) {
-        tab.className = 'module-tab active flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-cyan-400 bg-cyan-500/15 border border-cyan-500/25 whitespace-nowrap';
+        tab.className = 'module-tab active flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-cyan-400 bg-cyan-500/15 border border-cyan-500/25 whitespace-nowrap';
       } else {
-        tab.className = 'module-tab flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 whitespace-nowrap';
+        tab.className = 'module-tab flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent whitespace-nowrap';
       }
     });
 
@@ -538,6 +633,7 @@ class StudyApp {
       else dsaToggle.classList.add('hidden');
     }
 
+    this.updateFooterNavButton();
     this.loadModuleContent();
   }
 

@@ -975,4 +975,64 @@ code, pre, .font-mono {
   }
 }
 
+/* Sticky Unified Header Bar */
+#sticky-header-bar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  background-color: rgba(13, 19, 31, 0.96) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Module Tab with Integrated Checklist Pill */
+.module-tab {
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.tab-check-pill {
+  cursor: pointer !important;
+  padding: 1px 2px !important;
+  border-radius: 4px !important;
+  transition: transform 0.1s ease !important;
+}
+.tab-check-pill:hover {
+  transform: scale(1.15) !important;
+}
+
+.tab-check-box {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 3px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.tab-check-box.checked {
+  background-color: rgba(34, 197, 94, 0.25) !important;
+  border: 1px solid rgba(34, 197, 94, 0.55) !important;
+  color: #4ADE80 !important;
+}
+
+.tab-check-box.unchecked {
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: transparent !important;
+}
+
+.tab-check-box.unchecked:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+
 
