@@ -549,14 +549,35 @@ class StudyApp {
     if (mdContainer) mdContainer.innerHTML = '';
 
     try {
-      // Determine base URL dynamically for localhost vs GitHub Pages
-      const pathParts = window.location.pathname.split('/').filter(Boolean);
-      const repoName = (pathParts.length > 0 && pathParts[0] !== 'app') ? pathParts[0] : '';
-      const prefix = repoName ? `/${repoName}/` : '/';
-      const fetchUrl = prefix + relPath;
+      let response = null;
+      const candidates = [
+        relPath,
+        `./${relPath}`,
+        `/${relPath}`
+      ];
 
-      const response = await fetch(fetchUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      // If hosted under a sub-path like GitHub Pages /STUDYPREP/
+      const pathSegments = window.location.pathname.split('/').filter(p => p && !p.endsWith('.html'));
+      if (pathSegments.length > 0 && pathSegments[0] !== 'app' && pathSegments[0] !== 'docs' && !window.location.pathname.startsWith('/c:')) {
+        candidates.unshift(`/${pathSegments[0]}/${relPath}`);
+      }
+
+      for (const candidate of candidates) {
+        try {
+          const res = await fetch(candidate);
+          if (res.ok) {
+            response = res;
+            break;
+          }
+        } catch (e) {
+          // try next candidate
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(`HTTP fetch failed for all candidates of ${relPath}`);
+      }
+
       const text = await response.text();
       this.markdownCache[relPath] = text;
       if (loadingEl) loadingEl.classList.add('hidden');
@@ -1916,6 +1937,15 @@ class StudyApp {
     if (select) select.value = this.agentProvider;
     if (keyInput) keyInput.value = this.agentApiKey;
 
+    const geminiBtnLabel = document.getElementById('gemini-key-status-label');
+    if (geminiBtnLabel) {
+      if (this.agentProvider === 'gemini' && this.agentApiKey) {
+        geminiBtnLabel.innerText = 'Gemini Active ✅';
+      } else {
+        geminiBtnLabel.innerText = 'Connect Gemini';
+      }
+    }
+
     if (keyContainer && select) {
       if (geminiHint) {
         if (select.value === 'gemini') geminiHint.classList.remove('hidden');
@@ -1942,18 +1972,34 @@ class StudyApp {
             modeBadge.innerText = 'GPT-4o Mini (Paid)';
             modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/25';
           }
-        } else if (select.value === 'ollama') {
-          if (keyLabel) keyLabel.innerText = 'Ollama Endpoint URL (default http://localhost:11434):';
-          if (modeBadge) {
-            modeBadge.innerText = 'Local Ollama (Free)';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/25';
-          }
         }
       }
     }
 
     this.updateAgentContextBadge();
     this.renderAgentChatHistory();
+  }
+
+  promptGeminiApiKey() {
+    const existing = this.loadStorage('sde_agent_key', '');
+    const key = prompt('Paste your Google Gemini API Key:\n\n(Get a 100% free key with no credit card at: https://aistudio.google.com/app/apikey)\n\nTip: You can also paste it directly into the chat prompt below!', existing);
+    if (key !== null) {
+      const cleanKey = key.trim();
+      if (cleanKey) {
+        this.agentApiKey = cleanKey;
+        this.agentProvider = 'gemini';
+        this.saveStorage('sde_agent_key', cleanKey);
+        this.saveStorage('sde_agent_provider', 'gemini');
+        alert('✅ Google Gemini API key connected successfully!\n\nAI Tutor is now powered by Gemini 2.0 Flash in the cloud.');
+      } else {
+        this.agentApiKey = '';
+        this.agentProvider = 'offline';
+        this.saveStorage('sde_agent_key', '');
+        this.saveStorage('sde_agent_provider', 'offline');
+        alert('Switched back to Built-in Knowledge Engine.');
+      }
+      this.initAgentUI();
+    }
   }
 
   updateAgentContextBadge() {
@@ -1978,14 +2024,19 @@ class StudyApp {
   toggleAgentDrawer(forceState) {
     this.agentOpen = forceState !== undefined ? forceState : !this.agentOpen;
     const drawer = document.getElementById('agent-drawer');
+    const backdrop = document.getElementById('agent-drawer-backdrop');
     if (drawer) {
       if (this.agentOpen) {
         drawer.classList.remove('translate-x-full');
+        drawer.classList.add('open');
+        if (backdrop) backdrop.classList.remove('hidden');
         this.updateAgentContextBadge();
         const input = document.getElementById('agent-prompt-input');
         if (input) setTimeout(() => input.focus(), 200);
       } else {
         drawer.classList.add('translate-x-full');
+        drawer.classList.remove('open');
+        if (backdrop) backdrop.classList.add('hidden');
       }
     }
     this.refreshIcons();
@@ -2079,6 +2130,24 @@ class StudyApp {
     const query = input.value.trim();
     if (!query) return;
 
+    // Detect if user pasted a Gemini API key into the chat!
+    if (query.startsWith('AIzaSy') && query.length > 25) {
+      input.value = '';
+      this.agentApiKey = query;
+      this.agentProvider = 'gemini';
+      this.saveStorage('sde_agent_key', query);
+      this.saveStorage('sde_agent_provider', 'gemini');
+      this.initAgentUI();
+      this.appendAgentMessage('user', '🔑 Connecting Google Gemini API Key...');
+      this.appendAgentMessage('assistant', `### 🎉 Google Gemini API Key Connected!
+
+Your API key has been securely saved in your browser's \`localStorage\`.
+The AI Tutor is now powered by **Google Gemini 2.0 Flash (Cloud)**.
+
+Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code execution, or system architecture!`);
+      return;
+    }
+
     input.value = '';
     this.appendAgentMessage('user', query);
 
@@ -2136,6 +2205,17 @@ class StudyApp {
               <li><strong>Docker</strong>: Namespaces, cgroups, memory limits, OOM 137</li>
               <li><strong>AI</strong>: Tokens, BPE, structured JSON schemas, RAG, agents</li>
             </ul>
+
+            <div class="mt-2 p-2.5 rounded bg-surface-1 border border-cyan-500/30 flex items-center justify-between text-xs font-mono">
+              <div>
+                <span class="text-cyan-400 font-bold block">✨ Google Gemini Cloud AI</span>
+                <span class="text-[10px] text-slate-400">100% Free • Unlimited Conversations</span>
+              </div>
+              <button onclick="app.promptGeminiApiKey()" class="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded text-[11px] transition">
+                Connect Key
+              </button>
+            </div>
+
             <p class="text-slate-400 text-[11px]">
               Ask me anything about the current day's lessons, drills, or homework!
             </p>
