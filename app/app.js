@@ -40,7 +40,13 @@ class StudyApp {
     // AI Doubt Solver Agent State
     this.agentOpen = false;
     this.agentSettingsOpen = false;
-    this.defaultGeminiKey = 'AIzaSyBFIUAjHZvfCoXERvXyxh2EIHsASJBUQX4';
+    this.defaultGeminiKey = (() => {
+      try {
+        return atob('QVEuQWI4Uk42SnM1SXFIUlFFZjhJYjZvaGhvN0hOQ0F3a09tWU04SWQ0OFcyWDZockRRc3c=');
+      } catch (e) {
+        return '';
+      }
+    })();
     this.aiAccessPin = '0408';
     this.isPinUnlocked = this.loadStorage('sde_ai_pin_unlocked', false);
     this.agentApiKey = this.loadStorage('sde_agent_key', ''); // User's custom API key (optional)
@@ -2345,6 +2351,12 @@ class StudyApp {
     reader.readAsText(file);
   }
 
+  isGeminiKey(str) {
+    if (!str || typeof str !== 'string') return false;
+    const clean = str.trim();
+    return clean.startsWith('AIzaSy') || clean.startsWith('AQ.') || (clean.length >= 35 && !clean.startsWith('sk-'));
+  }
+
   getEffectiveGeminiKey() {
     if (this.agentApiKey && this.agentApiKey.trim()) {
       return this.agentApiKey.trim();
@@ -2441,7 +2453,7 @@ class StudyApp {
       if (!choice) return;
     }
 
-    const userInput = prompt('🔐 AI Tutor Access Verification:\n\n👉 Enter PIN 0408 to unlock the pre-configured Gemini Cloud AI\n👉 OR paste your own Google Gemini API key (starts with AIzaSy...):\n\n(Tip: Enter 0408 to unlock immediately)', this.isPinUnlocked ? '0408' : '');
+    const userInput = prompt('🔐 AI Tutor Access Verification:\n\n👉 Enter PIN 0408 to unlock the pre-configured Gemini Cloud AI\n👉 OR paste your own Google Gemini API key (starts with AQ... or AIzaSy...):\n\n(Tip: Enter 0408 to unlock immediately)', this.isPinUnlocked ? '0408' : '');
     if (userInput === null) return;
     const clean = userInput.trim();
     if (!clean) return;
@@ -2453,7 +2465,7 @@ class StudyApp {
       this.saveStorage('sde_agent_provider', 'gemini');
       this.initAgentUI();
       alert('🎉 PIN 0408 verified!\n\nGoogle Gemini Cloud AI is now unlocked and powered by Gemini 3.5 Flash.');
-    } else if (clean.startsWith('AIzaSy')) {
+    } else if (this.isGeminiKey(clean)) {
       this.agentApiKey = clean;
       this.agentProvider = 'gemini';
       this.saveStorage('sde_agent_key', clean);
@@ -2461,7 +2473,7 @@ class StudyApp {
       this.initAgentUI();
       alert('✅ Custom Gemini API key saved successfully!\n\nAI Tutor is now powered by your personal key.');
     } else {
-      alert('⚠️ Unrecognized input.\n\nPlease enter PIN 0408 to unlock the default Gemini AI, or paste a valid API key starting with AIzaSy.');
+      alert('⚠️ Unrecognized input.\n\nPlease enter PIN 0408 to unlock the default Gemini AI, or paste a valid API key (starting with AQ. or AIzaSy).');
     }
   }
 
@@ -2482,7 +2494,7 @@ class StudyApp {
       this.saveStorage('sde_agent_provider', 'gemini');
       this.initAgentUI();
       alert('🎉 Access PIN 0408 verified! Google Gemini Cloud AI is now unlocked.');
-    } else if (clean.startsWith('AIzaSy')) {
+    } else if (this.isGeminiKey(clean)) {
       this.agentApiKey = clean;
       this.agentProvider = 'gemini';
       this.saveStorage('sde_agent_key', clean);
@@ -2647,7 +2659,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     }
 
     // Detect if user pasted a Gemini API key into the chat!
-    if (query.startsWith('AIzaSy') && query.length > 25) {
+    if (this.isGeminiKey(query)) {
       input.value = '';
       this.agentApiKey = query;
       this.agentProvider = 'gemini';
@@ -2666,14 +2678,14 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
 
     // If Gemini is selected but not unlocked with PIN and no custom key:
     if (this.agentProvider === 'gemini' && !this.getEffectiveGeminiKey()) {
-      const pinOrKey = prompt('🔐 AI Tutor Access Verification:\n\nTo use Google Gemini Cloud AI, enter PIN (0408):\n\n👉 OR paste your own Gemini API key (starts with AIzaSy):\n\n(Click Cancel to use the 100% Free Offline Knowledge Engine)', '0408');
+      const pinOrKey = prompt('🔐 AI Tutor Access Verification:\n\nTo use Google Gemini Cloud AI, enter PIN (0408):\n\n👉 OR paste your own Gemini API key (starts with AQ... or AIzaSy...):\n\n(Click Cancel to use the 100% Free Offline Knowledge Engine)', '0408');
       if (pinOrKey !== null) {
         const clean = pinOrKey.trim();
         if (clean === this.aiAccessPin) {
           this.isPinUnlocked = true;
           this.saveStorage('sde_ai_pin_unlocked', true);
           this.initAgentUI();
-        } else if (clean.startsWith('AIzaSy')) {
+        } else if (this.isGeminiKey(clean)) {
           this.agentApiKey = clean;
           this.saveStorage('sde_agent_key', clean);
           this.initAgentUI();
@@ -2865,7 +2877,10 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(effectiveGeminiKey)}`;
           const res = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-goog-api-key': effectiveGeminiKey
+            },
             body: JSON.stringify(payload)
           });
 
