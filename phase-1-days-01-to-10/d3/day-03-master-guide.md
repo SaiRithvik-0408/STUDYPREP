@@ -8,12 +8,12 @@ Welcome to Day 3. Today we unlock sliding window algorithmic patterns, look insi
 
 | Section | Folder | Target Time | Focus Area |
 | :--- | :--- | :--- | :--- |
-| **DSA** | [`dsa/`](./dsa/README.md) | 2 Hours | Fixed-Size Sliding Window: Max Average Subarray, Permutation in String (Anagrams). |
-| **Backend** | [`be/`](./be/README.md) | 1 Hour | The Event Loop & Libuv: Microtasks vs Macrotasks, `process.nextTick`, Thread Pool. |
-| **Frontend** | [`fe/`](./fe/README.md) | 1 Hour | React Hooks Internals: How `useState` & `useEffect` work in Fiber's `memoizedState` linked list. |
-| **Docker** | [`docker/`](./docker/README.md) | 30 Mins | Multi-Stage Docker Builds: Reducing 1.2GB image to 130MB, Healthchecks. |
-| **AI** | [`ai/`](./ai/README.md) | 30 Mins | Self-Healing AI Pipelines: Schema validation with Zod and automated retry loops. |
-| **Others** | [`others/`](./others/README.md) | 30 Mins | Day 3 Quizzes, Event Loop Tracing Drill, Homework. |
+| **DSA** | [`dsa/`](./dsa/03-sliding-window-fixed-and-anagrams.md) | 2 Hours | Fixed-Size Sliding Window: Max Average Subarray, Permutation in String (Anagrams). |
+| **Backend** | [`be/`](./be/03-event-loop-libuv-and-threadpool.md) | 1 Hour | The Event Loop & Libuv: Microtasks vs Macrotasks, `process.nextTick`, Thread Pool. |
+| **Frontend** | [`fe/`](./fe/03-react-hooks-internals-and-custom-hooks.md) | 1 Hour | React Hooks Internals: How `useState` & `useEffect` work in Fiber's `memoizedState` linked list. |
+| **Docker** | [`docker/`](./docker/03-multi-stage-docker-builds.md) | 30 Mins | Multi-Stage Docker Builds: Reducing 1.2GB image to 130MB, Healthchecks. |
+| **AI** | [`ai/`](./ai/03-zod-schema-validation-and-retry-loops.md) | 30 Mins | Self-Healing AI Pipelines: Schema validation with Zod and automated retry loops. |
+| **Others** | [`others/`](./others/03-event-loop-drills-and-quizzes.md) | 30 Mins | Day 3 Quizzes, Event Loop Tracing Drill, Homework. |
 
 ---
 

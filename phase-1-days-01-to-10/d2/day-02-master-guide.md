@@ -8,12 +8,12 @@ Welcome to Day 2. Today we progress from fundamental syntax to high-level patter
 
 | Section | Folder | Target Time | Focus Area |
 | :--- | :--- | :--- | :--- |
-| **DSA** | [`dsa/`](./dsa/README.md) | 2 Hours | Advanced Two Pointers: 3Sum, Container With Most Water, Trapping Rain Water (All Approaches). |
-| **Backend** | [`be/`](./be/README.md) | 1 Hour | Closures, V8 Garbage Collection (Minor GC vs Major GC), Profiling Memory Leaks in Node.js. |
-| **Frontend** | [`fe/`](./fe/README.md) | 1 Hour | React Fiber Architecture: Linked List Traversal, Double Buffering, Interruptible Rendering. |
-| **Docker** | [`docker/`](./docker/README.md) | 30 Mins | Writing Production Dockerfiles: Layer Caching, Base Images, Security & Non-Root Users. |
-| **AI** | [`ai/`](./ai/README.md) | 30 Mins | Prompt Engineering as Code: Few-Shot In-Context Learning, Chain-of-Thought (CoT). |
-| **Others** | [`others/`](./others/README.md) | 30 Mins | Day 2 Drills, Memory Leak Debugging Puzzle, Homework Challenge. |
+| **DSA** | [`dsa/`](./dsa/02-3sum-container-water-and-trapping-rain.md) | 2 Hours | Advanced Two Pointers: 3Sum, Container With Most Water, Trapping Rain Water (All Approaches). |
+| **Backend** | [`be/`](./be/02-v8-memory-management-and-gc-profiling.md) | 1 Hour | Closures, V8 Garbage Collection (Minor GC vs Major GC), Profiling Memory Leaks in Node.js. |
+| **Frontend** | [`fe/`](./fe/02-react-fiber-architecture-and-concurrency.md) | 1 Hour | React Fiber Architecture: Linked List Traversal, Double Buffering, Interruptible Rendering. |
+| **Docker** | [`docker/`](./docker/02-production-dockerfile-and-layer-caching.md) | 30 Mins | Writing Production Dockerfiles: Layer Caching, Base Images, Security & Non-Root Users. |
+| **AI** | [`ai/`](./ai/02-prompt-engineering-and-chain-of-thought.md) | 30 Mins | Prompt Engineering as Code: Few-Shot In-Context Learning, Chain-of-Thought (CoT). |
+| **Others** | [`others/`](./others/02-memory-leak-quizzes-and-drills.md) | 30 Mins | Day 2 Drills, Memory Leak Debugging Puzzle, Homework Challenge. |
 
 ---
 

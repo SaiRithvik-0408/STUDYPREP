@@ -115,12 +115,13 @@ window.CURRICULUM_DATA = {
           "folder": "others",
           "file": "01-event-loop-puzzle-and-quizzes.md",
           "path": "phase-1-days-01-to-10/d1/others/01-event-loop-puzzle-and-quizzes.md",
-          "summary": "To complete Day 1, review these practical drills and solve the execution puzzle.",
+          "summary": "High-yield drills: 8-step Event Loop execution trace, V8 TDZ traps, React Fiber reconciliation bugs, Linux cgroups OOM debugging, and LLM token asymmetry.",
           "checklist": [
-            "Line 1 (`console.log('A')`)",
-            "Output: `A`",
-            "The function passed to `new Promise((resolve) => { ... })` runs SYNCHRONOUSLY!",
-            "Output: `C`"
+            "Solve the 8-step Event Loop execution trace (Microtasks vs Macrotasks)",
+            "Master V8 Temporal Dead Zone (TDZ) and lexical shadowing traps",
+            "Diagnose React 18/19 index-as-key state corruption bug",
+            "Troubleshoot Linux cgroups OOM-killer (exit code 137)",
+            "Calculate LLM prompt prefill vs auto-regressive decoding cost & latency"
           ]
         }
       }

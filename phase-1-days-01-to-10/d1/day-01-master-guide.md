@@ -8,12 +8,12 @@ Welcome to Day 1 of your accelerated training. Today we build unshakeable fundam
 
 | Section | Folder | Target Time | Focus Area |
 | :--- | :--- | :--- | :--- |
-| **DSA** | [`dsa/`](./dsa/README.md) | 1.5 - 2 Hours | Arrays in RAM, Pointer Arithmetic, Two-Pointer Pattern, 3 LeetCode Problems (All Approaches). |
-| **Backend** | [`be/`](./be/README.md) | 1 Hour | The V8 Engine, Execution Context Lifecycle, Hoisting, Temporal Dead Zone (TDZ). |
-| **Frontend** | [`fe/`](./fe/README.md) | 1 Hour | Browser DOM vs Virtual DOM, Component Lifecycle, JSX compilation, React 18/19 render cycle. |
-| **Docker** | [`docker/`](./docker/README.md) | 30 Mins | Containers vs Virtual Machines, Linux Namespaces & Cgroups, Docker Engine Architecture. |
-| **AI** | [`ai/`](./ai/README.md) | 30 Mins | LLM Primitives, Byte-Pair Encoding (Tokens), Temperature, Strict Structured JSON Outputs. |
-| **Others** | [`others/`](./others/README.md) | 30 Mins | Day 1 Verification Quiz, Event Loop Output Puzzle, Hands-on Coding Drill. |
+| **DSA** | [`dsa/`](./dsa/01-arrays-and-two-pointers.md) | 1.5 - 2 Hours | Arrays in RAM, Pointer Arithmetic, Two-Pointer Pattern, 3 LeetCode Problems (All Approaches). |
+| **Backend** | [`be/`](./be/01-v8-engine-and-execution-context.md) | 1 Hour | The V8 Engine, Execution Context Lifecycle, Hoisting, Temporal Dead Zone (TDZ). |
+| **Frontend** | [`fe/`](./fe/01-virtual-dom-and-render-pipeline.md) | 1 Hour | Browser DOM vs Virtual DOM, Component Lifecycle, JSX compilation, React 18/19 render cycle. |
+| **Docker** | [`docker/`](./docker/01-linux-containers-vs-vms.md) | 30 Mins | Containers vs Virtual Machines, Linux Namespaces & Cgroups, Docker Engine Architecture. |
+| **AI** | [`ai/`](./ai/01-llm-tokens-and-structured-schemas.md) | 30 Mins | LLM Primitives, Byte-Pair Encoding (Tokens), Temperature, Strict Structured JSON Outputs. |
+| **Others** | [`others/`](./others/01-event-loop-puzzle-and-quizzes.md) | 30 Mins | Day 1 Verification Quiz, Event Loop Output Puzzle, Hands-on Coding Drill. |
 
 ---
 

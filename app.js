@@ -36,6 +36,14 @@ class StudyApp {
 
     // Cache fetched markdown
     this.markdownCache = {};
+
+    // AI Doubt Solver Agent State
+    this.agentOpen = false;
+    this.agentSettingsOpen = false;
+    this.agentProvider = this.loadStorage('sde_agent_provider', 'offline');
+    this.agentApiKey = this.loadStorage('sde_agent_key', '');
+    this.agentChatHistory = this.loadStorage('sde_agent_history', []);
+    this.agentIsTyping = false;
   }
 
   loadStorage(key, fallback) {
@@ -88,6 +96,7 @@ class StudyApp {
     this.renderSidebar();
     this.selectDay(this.currentDay, false);
     this.updateGlobalProgress();
+    this.initAgentUI();
     this.refreshIcons();
   }
 
@@ -300,7 +309,8 @@ class StudyApp {
     document.getElementById('current-day-number-badge').innerText = `Day ${dayData.day} of 40`;
     document.getElementById('current-day-title').innerText = dayData.title;
 
-    this.updateStatusButtons();
+    this.updateAutoStatusBadge();
+    this.updateAgentContextBadge();
 
     const prevBtn = document.getElementById('btn-prev-day');
     const nextBtn = document.getElementById('btn-next-day');
@@ -325,7 +335,7 @@ class StudyApp {
   setDayStatus(status) {
     this.statusMap[this.currentDay] = status;
     this.saveStorage('sde_study_status', this.statusMap);
-    this.updateStatusButtons();
+    this.updateAutoStatusBadge();
     this.renderSidebar();
     this.updateGlobalProgress();
 
@@ -334,27 +344,36 @@ class StudyApp {
     }
   }
 
-  updateStatusButtons() {
-    const currentStatus = this.statusMap[this.currentDay] || 'not-started';
+  updateAutoStatusBadge() {
+    const badge = document.getElementById('day-auto-status');
+    const indicator = document.getElementById('day-auto-status-indicator');
+    const text = document.getElementById('day-auto-status-text');
+    if (!badge) return;
 
-    const btnNotStarted = document.getElementById('btn-status-not-started');
-    const btnInProgress = document.getElementById('btn-status-in-progress');
-    const btnCompleted = document.getElementById('btn-status-completed');
+    const modules = ['dsa', 'be', 'fe', 'docker', 'ai', 'others'];
+    const completedCount = modules.filter(k => !!this.checklistMap[`${this.currentDay}-${k}`]).length;
 
-    if (btnNotStarted) {
-      btnNotStarted.className = currentStatus === 'not-started'
-        ? 'px-2.5 py-1 rounded font-bold text-white bg-surface-3 shadow-sm'
-        : 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition';
+    let status = 'not-started';
+    if (completedCount === 6) status = 'completed';
+    else if (completedCount > 0) status = 'in-progress';
+
+    if (this.statusMap[this.currentDay] !== status) {
+      this.statusMap[this.currentDay] = status;
+      this.saveStorage('sde_study_status', this.statusMap);
     }
-    if (btnInProgress) {
-      btnInProgress.className = currentStatus === 'in-progress'
-        ? 'px-2.5 py-1 rounded font-bold text-terracotta-400 bg-terracotta-500/20 border border-terracotta-500/30 shadow-sm'
-        : 'px-2.5 py-1 rounded text-terracotta-400 hover:bg-terracotta-500/10 transition';
-    }
-    if (btnCompleted) {
-      btnCompleted.className = currentStatus === 'completed'
-        ? 'px-2.5 py-1 rounded font-bold text-sage-400 bg-sage-500/20 border border-sage-500/30 shadow-sm'
-        : 'px-2.5 py-1 rounded text-sage-400 hover:bg-sage-500/10 transition';
+
+    if (status === 'completed') {
+      badge.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-md bg-sage-500/20 border border-sage-500/40 text-xs font-mono text-sage-400 shadow-sm';
+      if (indicator) indicator.innerText = '🟢';
+      if (text) text.innerText = 'Completed (6/6)';
+    } else if (status === 'in-progress') {
+      badge.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-md bg-terracotta-500/20 border border-terracotta-500/40 text-xs font-mono text-terracotta-400 shadow-sm';
+      if (indicator) indicator.innerText = '🟡';
+      if (text) text.innerText = `In Progress (${completedCount}/6)`;
+    } else {
+      badge.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-xs font-mono text-slate-400';
+      if (indicator) indicator.innerText = '⚪';
+      if (text) text.innerText = 'Not Started (0/6)';
     }
   }
 
@@ -376,9 +395,9 @@ class StudyApp {
       if (isChecked) completedCount++;
 
       const badge = document.createElement('label');
-      badge.className = `flex items-center space-x-1 px-2 py-0.5 rounded border text-[11px] cursor-pointer transition select-none ${
+      badge.className = `flex items-center space-x-1 px-2.5 py-1 rounded border text-[11px] cursor-pointer transition select-none ${
         isChecked 
-          ? 'bg-sage-500/15 border-sage-500/30 text-sage-400' 
+          ? 'bg-sage-500/15 border-sage-500/30 text-sage-400 font-medium' 
           : 'bg-surface-2 border-white/[0.08] text-slate-400 hover:border-slate-600'
       }`;
       badge.innerHTML = `
@@ -389,14 +408,20 @@ class StudyApp {
       badge.querySelector('input').addEventListener('change', (e) => {
         this.checklistMap[checkKey] = e.target.checked;
         this.saveStorage('sde_study_checklist', this.checklistMap);
-        this.renderDayChecklist();
 
         const newCompleted = modules.filter(k => !!this.checklistMap[`${this.currentDay}-${k}`]).length;
-        if (newCompleted === 6 && (this.statusMap[this.currentDay] !== 'completed')) {
+        if (newCompleted === 6) {
           this.setDayStatus('completed');
-        } else if (newCompleted > 0 && !this.statusMap[this.currentDay]) {
+        } else if (newCompleted > 0) {
           this.setDayStatus('in-progress');
+        } else {
+          this.setDayStatus('not-started');
         }
+
+        this.renderDayChecklist();
+        this.updateAutoStatusBadge();
+        this.updateGlobalProgress();
+        this.renderSidebar();
       });
 
       container.appendChild(badge);
@@ -405,11 +430,13 @@ class StudyApp {
     if (summary) {
       summary.innerText = `${completedCount}/6 Done`;
     }
+    this.updateAutoStatusBadge();
   }
 
   // ================= MODULE TABS & CONTENT LOADING =================
   selectModuleTab(moduleKey) {
     this.currentModule = moduleKey;
+    this.updateAgentContextBadge();
 
     document.querySelectorAll('.module-tab').forEach(tab => {
       if (tab.dataset.module === moduleKey) {
@@ -554,6 +581,7 @@ class StudyApp {
   }
 
   enhanceRenderedMarkdown(container) {
+    // 1. Copy code button
     container.querySelectorAll('pre').forEach(pre => {
       const btn = document.createElement('button');
       btn.className = 'code-copy-btn';
@@ -569,6 +597,79 @@ class StudyApp {
       };
       pre.appendChild(btn);
     });
+
+    // 2. Interactive Hyperlink Interception (SPA Navigation & Module Switching)
+    container.querySelectorAll('a').forEach(anchor => {
+      const href = anchor.getAttribute('href') || '';
+      if (!href) return;
+
+      // External links: open in new tab safely
+      if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
+        anchor.setAttribute('target', '_blank');
+        anchor.setAttribute('rel', 'noopener noreferrer');
+        return;
+      }
+
+      // In-page hash anchors (#...)
+      if (href.startsWith('#')) {
+        anchor.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = href.slice(1);
+          const targetEl = document.getElementById(targetId) || 
+                           container.querySelector(`[name="${targetId}"]`) || 
+                           container.querySelector(`[id="${decodeURIComponent(targetId)}"]`);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+        return;
+      }
+
+      // Internal module & day hyperlinks
+      anchor.addEventListener('click', (e) => {
+        e.preventDefault();
+        const cleanHref = href.toLowerCase().replace(/\\/g, '/');
+
+        // Check if link points to another Day (e.g. "d2", "d10", "day-02", "day-10")
+        const dayMatch = cleanHref.match(/(?:^|\/|\.\.\/)(?:d|day-?)(\d+)(?:\/|$|\.md)/i);
+        if (dayMatch && dayMatch[1]) {
+          const targetDay = parseInt(dayMatch[1], 10);
+          if (targetDay >= 1 && targetDay <= 40 && targetDay !== this.currentDay) {
+            this.selectDay(targetDay);
+          }
+        }
+
+        // Determine target Module Tab
+        let targetModule = null;
+        if (cleanHref.includes('/dsa') || cleanHref.startsWith('dsa') || cleanHref.includes('arrays') || cleanHref.includes('two-pointer') || cleanHref.includes('sliding-window') || cleanHref.includes('leetcode')) {
+          targetModule = 'dsa';
+        } else if (cleanHref.includes('/be') || cleanHref.startsWith('be') || cleanHref.includes('v8') || cleanHref.includes('backend') || cleanHref.includes('node') || cleanHref.includes('postgresql') || cleanHref.includes('redis')) {
+          targetModule = 'be';
+        } else if (cleanHref.includes('/fe') || cleanHref.startsWith('fe') || cleanHref.includes('react') || cleanHref.includes('frontend') || cleanHref.includes('dom') || cleanHref.includes('fiber') || cleanHref.includes('nextjs')) {
+          targetModule = 'fe';
+        } else if (cleanHref.includes('/docker') || cleanHref.startsWith('docker') || cleanHref.includes('container') || cleanHref.includes('compose') || cleanHref.includes('kubernetes')) {
+          targetModule = 'docker';
+        } else if (cleanHref.includes('/ai') || cleanHref.startsWith('ai') || cleanHref.includes('llm') || cleanHref.includes('token') || cleanHref.includes('prompt') || cleanHref.includes('rag') || cleanHref.includes('agent')) {
+          targetModule = 'ai';
+        } else if (cleanHref.includes('/others') || cleanHref.startsWith('others') || cleanHref.includes('drill') || cleanHref.includes('quiz') || cleanHref.includes('puzzle') || cleanHref.includes('homework')) {
+          targetModule = 'others';
+        } else if (cleanHref.includes('notes')) {
+          targetModule = 'notes';
+        } else if (cleanHref.includes('master-guide') || cleanHref.includes('overview')) {
+          targetModule = 'overview';
+        }
+
+        if (targetModule) {
+          this.selectModuleTab(targetModule);
+          const scrollContainer = document.getElementById('main-content-scroll');
+          if (scrollContainer) scrollContainer.scrollTop = 0;
+        }
+      });
+    });
+
+    if (this.currentModule === 'others') {
+      this.appendInteractiveDrillWidget(container);
+    }
 
     this.refreshIcons();
   }
@@ -600,6 +701,11 @@ class StudyApp {
         </div>
       </div>
     `;
+
+    if (this.currentModule === 'others') {
+      this.appendInteractiveDrillWidget(mdContainer);
+    }
+
     this.refreshIcons();
   }
 
@@ -1309,7 +1415,439 @@ class StudyApp {
     this.refreshIcons();
   }
 
-  // ================= DATA BACKUP & RESTORE =================
+  // ================= INTERACTIVE DRILLS SIMULATOR & EXERCISES =================
+  appendInteractiveDrillWidget(container) {
+    if (document.getElementById('interactive-drill-widget')) return;
+
+    const widget = document.createElement('div');
+    widget.id = 'interactive-drill-widget';
+    widget.className = 'mt-8 p-5 rounded-xl bg-surface-1 border border-cyan-500/30 shadow-lg space-y-4';
+    widget.innerHTML = `
+      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div class="flex items-center space-x-2 text-cyan-400">
+          <i data-lucide="play-circle" class="w-5 h-5"></i>
+          <h3 class="font-display font-bold text-sm text-white">Interactive Event Loop Execution Simulator</h3>
+        </div>
+        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">Live VM State</span>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Step through execution to visually inspect how the <strong>V8 Call Stack</strong>, <strong>Microtask Queue</strong>, and <strong>Timers Macrotask Queue</strong> transition in real time:
+      </p>
+
+      <!-- Live Simulator Visualizer Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+        <div class="p-3 rounded-lg bg-surface-2 border border-white/[0.08]">
+          <div class="flex items-center justify-between text-slate-400 border-b border-white/[0.06] pb-1.5 mb-2">
+            <span class="font-bold text-cyan-400">1. Call Stack</span>
+            <span id="sim-stack-count" class="text-[10px] text-slate-500">Idle</span>
+          </div>
+          <div id="sim-call-stack" class="min-h-[70px] flex flex-col justify-end space-y-1 text-slate-300 text-[11px]">
+            <div class="text-slate-600 italic">Call Stack Idle</div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg bg-surface-2 border border-white/[0.08]">
+          <div class="flex items-center justify-between text-slate-400 border-b border-white/[0.06] pb-1.5 mb-2">
+            <span class="font-bold text-sage-400">2. Microtask Queue</span>
+            <span id="sim-micro-count" class="text-[10px] text-slate-500">0 items</span>
+          </div>
+          <div id="sim-micro-queue" class="min-h-[70px] flex flex-col space-y-1 text-slate-300 text-[11px]">
+            <div class="text-slate-600 italic">Queue Empty</div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg bg-surface-2 border border-white/[0.08]">
+          <div class="flex items-center justify-between text-slate-400 border-b border-white/[0.06] pb-1.5 mb-2">
+            <span class="font-bold text-terracotta-400">3. Macrotask (Timers)</span>
+            <span id="sim-macro-count" class="text-[10px] text-slate-500">0 items</span>
+          </div>
+          <div id="sim-macro-queue" class="min-h-[70px] flex flex-col space-y-1 text-slate-300 text-[11px]">
+            <div class="text-slate-600 italic">Queue Empty</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Console Output Display -->
+      <div class="p-3 rounded-lg bg-void border border-white/[0.08] font-mono text-xs">
+        <div class="flex items-center justify-between text-slate-500 pb-1 mb-1 border-b border-white/[0.06]">
+          <span>Terminal Stdout:</span>
+          <span id="sim-step-indicator" class="text-cyan-400 text-[11px]">Ready (Step 0/8)</span>
+        </div>
+        <div id="sim-stdout" class="text-sage-400 font-semibold tracking-wide text-xs">
+          [Click 'Step Execution' or 'Run All' to start simulation]
+        </div>
+        <div id="sim-explanation" class="text-slate-400 text-[11px] mt-1.5 leading-relaxed"></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-2 pt-1">
+        <button id="btn-sim-step" class="px-3.5 py-1.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+          <i data-lucide="step-forward" class="w-3.5 h-3.5"></i>
+          <span>Step Execution</span>
+        </button>
+        <button id="btn-sim-run" class="px-3.5 py-1.5 rounded-md bg-surface-2 hover:bg-surface-3 text-slate-300 border border-white/[0.08] text-xs font-medium transition flex items-center gap-1.5">
+          <i data-lucide="play" class="w-3.5 h-3.5"></i>
+          <span>Run All</span>
+        </button>
+        <button id="btn-sim-reset" class="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface-3 text-slate-400 hover:text-white border border-white/[0.08] text-xs transition">
+          Reset
+        </button>
+      </div>
+    `;
+
+    container.appendChild(widget);
+    this.initEventLoopSimulator();
+    this.refreshIcons();
+  }
+
+  initEventLoopSimulator() {
+    let currentStep = 0;
+    const steps = [
+      {
+        step: 1,
+        title: "Line 1: console.log('1: Synchronous Start')",
+        stack: ["console.log('1')"],
+        micro: [],
+        macro: [],
+        stdout: "1",
+        explanation: "Synchronous evaluation on Call Stack. Output: 1."
+      },
+      {
+        step: 2,
+        title: "Line 3: setTimeout(..., 0)",
+        stack: ["setTimeout(0ms)"],
+        micro: [],
+        macro: ["Callback 2 (setTimeout 0ms)"],
+        stdout: "1",
+        explanation: "Registers with OS timers subsystem. Callback 2 placed in Macrotask Queue."
+      },
+      {
+        step: 3,
+        title: "Line 7: Promise.resolve().then(...) & queueMicrotask",
+        stack: ["Promise.resolve()", "queueMicrotask()"],
+        micro: ["Callback 3 (Promise 1)", "Callback 5 (queueMicrotask)"],
+        macro: ["Callback 2 (setTimeout 0ms)"],
+        stdout: "1",
+        explanation: "Resolved Promise .then() and queueMicrotask() callbacks are queued into Microtask Queue."
+      },
+      {
+        step: 4,
+        title: "Line 17: new Promise(executor)",
+        stack: ["new Promise(executor)", "console.log('6')"],
+        micro: ["Callback 3 (Promise 1)", "Callback 5 (queueMicrotask)", "Callback 7 (Promise .then)"],
+        macro: ["Callback 2 (setTimeout 0ms)"],
+        stdout: "1, 6",
+        explanation: "INTERVIEW TRAP: Promise executor runs SYNCHRONOUSLY! Output: 6. resolve() queues Callback 7."
+      },
+      {
+        step: 5,
+        title: "Line 23: console.log('8: Synchronous End')",
+        stack: ["console.log('8')"],
+        micro: ["Callback 3 (Promise 1)", "Callback 5 (queueMicrotask)", "Callback 7 (Promise .then)"],
+        macro: ["Callback 2 (setTimeout 0ms)"],
+        stdout: "1, 6, 8",
+        explanation: "Main synchronous script finishes. Output: 8. Call Stack is now completely empty!"
+      },
+      {
+        step: 6,
+        title: "Event Loop: Draining Microtasks (Part 1)",
+        stack: ["Callback 3 -> console.log('3')"],
+        micro: ["Callback 5 (queueMicrotask)", "Callback 7 (Promise .then)", "Callback 4 (Promise 2)"],
+        macro: ["Callback 2 (setTimeout 0ms)"],
+        stdout: "1, 6, 8, 3",
+        explanation: "Microtask Queue runs before any macrotasks. Callback 3 prints 3 and enqueues chained Promise 2 (Callback 4)."
+      },
+      {
+        step: 7,
+        title: "Event Loop: Draining Microtasks (Part 2)",
+        stack: ["Drain: Callback 5, 7, 4"],
+        micro: [],
+        macro: ["Callback 2 (setTimeout 0ms)"],
+        stdout: "1, 6, 8, 3, 5, 7, 4",
+        explanation: "Microtask Queue drains completely! Callback 5 (prints 5), Callback 7 (prints 7), Callback 4 (prints 4)."
+      },
+      {
+        step: 8,
+        title: "Event Loop: Timers Phase (Macrotask)",
+        stack: ["Callback 2 -> console.log('2')"],
+        micro: [],
+        macro: [],
+        stdout: "1, 6, 8, 3, 5, 7, 4, 2",
+        explanation: "Microtasks empty! Event Loop checks Macrotasks. Runs Callback 2 (prints 2). Program terminates."
+      }
+    ];
+
+    const renderStep = (idx) => {
+      const data = steps[idx];
+      const stackEl = document.getElementById('sim-call-stack');
+      const microEl = document.getElementById('sim-micro-queue');
+      const macroEl = document.getElementById('sim-macro-queue');
+      const stdoutEl = document.getElementById('sim-stdout');
+      const expEl = document.getElementById('sim-explanation');
+      const indEl = document.getElementById('sim-step-indicator');
+      const stackCount = document.getElementById('sim-stack-count');
+      const microCount = document.getElementById('sim-micro-count');
+      const macroCount = document.getElementById('sim-macro-count');
+
+      if (!stackEl) return;
+
+      if (indEl) indEl.innerText = `Step ${data.step}/8: ${data.title}`;
+      if (stdoutEl) stdoutEl.innerText = `[Stdout]: ${data.stdout}`;
+      if (expEl) expEl.innerText = data.explanation;
+
+      if (stackEl) {
+        stackEl.innerHTML = data.stack.length > 0 
+          ? data.stack.map(s => `<div class="p-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">${s}</div>`).join('')
+          : '<div class="text-slate-600 italic">Call Stack Idle</div>';
+      }
+      if (stackCount) stackCount.innerText = `${data.stack.length} frame(s)`;
+
+      if (microEl) {
+        microEl.innerHTML = data.micro.length > 0
+          ? data.micro.map(m => `<div class="p-1 rounded bg-sage-500/20 text-sage-300 border border-sage-500/30">${m}</div>`).join('')
+          : '<div class="text-slate-600 italic">Queue Empty</div>';
+      }
+      if (microCount) microCount.innerText = `${data.micro.length} item(s)`;
+
+      if (macroEl) {
+        macroEl.innerHTML = data.macro.length > 0
+          ? data.macro.map(m => `<div class="p-1 rounded bg-terracotta-500/20 text-terracotta-300 border border-terracotta-500/30">${m}</div>`).join('')
+          : '<div class="text-slate-600 italic">Queue Empty</div>';
+      }
+      if (macroCount) macroCount.innerText = `${data.macro.length} item(s)`;
+    };
+
+    const stepBtn = document.getElementById('btn-sim-step');
+    const runBtn = document.getElementById('btn-sim-run');
+    const resetBtn = document.getElementById('btn-sim-reset');
+
+    if (stepBtn) {
+      stepBtn.onclick = () => {
+        renderStep(currentStep);
+        currentStep = (currentStep + 1) % steps.length;
+      };
+    }
+
+    if (runBtn) {
+      runBtn.onclick = () => {
+        let i = 0;
+        const interval = setInterval(() => {
+          if (i >= steps.length) {
+            clearInterval(interval);
+            return;
+          }
+          renderStep(i);
+          i++;
+        }, 800);
+      };
+    }
+
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        currentStep = 0;
+        const stackEl = document.getElementById('sim-call-stack');
+        const microEl = document.getElementById('sim-micro-queue');
+        const macroEl = document.getElementById('sim-macro-queue');
+        const stdoutEl = document.getElementById('sim-stdout');
+        const expEl = document.getElementById('sim-explanation');
+        const indEl = document.getElementById('sim-step-indicator');
+
+        if (indEl) indEl.innerText = 'Ready (Step 0/8)';
+        if (stdoutEl) stdoutEl.innerText = "[Click 'Step Execution' or 'Run All' to start simulation]";
+        if (expEl) expEl.innerText = '';
+        if (stackEl) stackEl.innerHTML = '<div class="text-slate-600 italic">Call Stack Idle</div>';
+        if (microEl) microEl.innerHTML = '<div class="text-slate-600 italic">Queue Empty</div>';
+        if (macroEl) macroEl.innerHTML = '<div class="text-slate-600 italic">Queue Empty</div>';
+      };
+    }
+  }
+
+  // ================= MULTI-DEVICE PROGRESS SYNC & EXPORT =================
+  openExportModal() {
+    const modal = document.getElementById('sync-export-modal');
+    if (modal) modal.classList.remove('hidden');
+    this.refreshIcons();
+  }
+
+  closeExportModal() {
+    const modal = document.getElementById('sync-export-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  showExportToast(msg) {
+    const toast = document.getElementById('export-toast');
+    const toastText = document.getElementById('export-toast-text');
+    if (toast && toastText) {
+      toastText.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+  }
+
+  exportToExcel() {
+    try {
+      if (typeof XLSX === 'undefined') {
+        this.exportToCSV();
+        return;
+      }
+
+      const days = this.data.days || {};
+      const rowData = [];
+
+      for (let d = 1; d <= 40; d++) {
+        const dayInfo = days[d] || {};
+        const phaseId = dayInfo.phaseId || 'phase-1';
+        const phase = phaseId === 'phase-1' ? 'Phase 1' : phaseId === 'phase-2' ? 'Phase 2' : phaseId === 'phase-3' ? 'Phase 3' : 'Phase 4';
+        const title = dayInfo.title || `Day ${d}`;
+
+        const dsa = this.checklistMap[`${d}-dsa`] ? 'Y' : 'N';
+        const be = this.checklistMap[`${d}-be`] ? 'Y' : 'N';
+        const fe = this.checklistMap[`${d}-fe`] ? 'Y' : 'N';
+        const docker = this.checklistMap[`${d}-docker`] ? 'Y' : 'N';
+        const ai = this.checklistMap[`${d}-ai`] ? 'Y' : 'N';
+        const drills = this.checklistMap[`${d}-others`] ? 'Y' : 'N';
+
+        const completedCount = [dsa, be, fe, docker, ai, drills].filter(x => x === 'Y').length;
+        const status = completedCount === 6 ? 'Completed' : (completedCount > 0 ? 'In Progress' : 'Not Started');
+        const pct = `${Math.round((completedCount / 6) * 100)}%`;
+        const notes = this.notesMap[d] || '';
+
+        rowData.push({
+          'Day #': d,
+          'Phase': phase,
+          'Topic Title': title,
+          'Status': status,
+          'DSA': dsa,
+          'Backend': be,
+          'Frontend': fe,
+          'Docker': docker,
+          'AI': ai,
+          'Drills': drills,
+          'Done / 6': completedCount,
+          'Day %': pct,
+          'Notes': notes
+        });
+      }
+
+      const ws = XLSX.utils.json_to_sheet(rowData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Daily Tracker');
+      XLSX.writeFile(wb, `SDE_Mastery_40_Progress_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      this.showExportToast('Excel file exported successfully!');
+    } catch (err) {
+      console.error('Excel export error, falling back to CSV:', err);
+      this.exportToCSV();
+    }
+  }
+
+  exportToCSV() {
+    try {
+      const days = this.data.days || {};
+      const headers = ['Day #', 'Phase', 'Topic Title', 'Status', 'DSA', 'Backend', 'Frontend', 'Docker', 'AI', 'Drills', 'Done / 6', 'Day %', 'Notes'];
+      const rows = [headers];
+
+      for (let d = 1; d <= 40; d++) {
+        const dayInfo = days[d] || {};
+        const phaseId = dayInfo.phaseId || 'phase-1';
+        const phase = phaseId === 'phase-1' ? 'Phase 1' : phaseId === 'phase-2' ? 'Phase 2' : phaseId === 'phase-3' ? 'Phase 3' : 'Phase 4';
+        const title = `"${(dayInfo.title || `Day ${d}`).replace(/"/g, '""')}"`;
+
+        const dsa = this.checklistMap[`${d}-dsa`] ? 'Y' : 'N';
+        const be = this.checklistMap[`${d}-be`] ? 'Y' : 'N';
+        const fe = this.checklistMap[`${d}-fe`] ? 'Y' : 'N';
+        const docker = this.checklistMap[`${d}-docker`] ? 'Y' : 'N';
+        const ai = this.checklistMap[`${d}-ai`] ? 'Y' : 'N';
+        const drills = this.checklistMap[`${d}-others`] ? 'Y' : 'N';
+
+        const completedCount = [dsa, be, fe, docker, ai, drills].filter(x => x === 'Y').length;
+        const status = completedCount === 6 ? 'Completed' : (completedCount > 0 ? 'In Progress' : 'Not Started');
+        const pct = `${Math.round((completedCount / 6) * 100)}%`;
+        const notes = `"${(this.notesMap[d] || '').replace(/"/g, '""')}"`;
+
+        rows.push([d, phase, title, status, dsa, be, fe, docker, ai, drills, completedCount, pct, notes]);
+      }
+
+      const csvContent = rows.map(e => e.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SDE_Mastery_40_Progress_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      this.showExportToast('CSV spreadsheet exported successfully!');
+    } catch (err) {
+      console.error('CSV export error:', err);
+      this.copyProgressToClipboard();
+    }
+  }
+
+  copyProgressToClipboard() {
+    const backupData = {
+      version: 2,
+      exportDate: new Date().toISOString(),
+      statusMap: this.statusMap,
+      checklistMap: this.checklistMap,
+      notesMap: this.notesMap,
+      quizScoresMap: this.quizScoresMap
+    };
+
+    const text = JSON.stringify(backupData);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showExportToast('Progress copied to clipboard! Paste it on any device.');
+      }).catch(() => {
+        this.fallbackCopyToInput(text);
+      });
+    } else {
+      this.fallbackCopyToInput(text);
+    }
+  }
+
+  fallbackCopyToInput(text) {
+    const input = document.getElementById('paste-import-input');
+    if (input) {
+      input.value = text;
+      input.select();
+      this.showExportToast('Text ready in input box below! Press Ctrl+C / Cmd+C.');
+    }
+  }
+
+  importFromClipboardText() {
+    const input = document.getElementById('paste-import-input');
+    const raw = input ? input.value.trim() : '';
+    if (!raw) {
+      alert('Please paste backup JSON text into the input field.');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.statusMap) this.statusMap = parsed.statusMap;
+      if (parsed.checklistMap) this.checklistMap = parsed.checklistMap;
+      if (parsed.notesMap) this.notesMap = parsed.notesMap;
+      if (parsed.quizScoresMap) this.quizScoresMap = parsed.quizScoresMap;
+
+      this.saveStorage('sde_study_status', this.statusMap);
+      this.saveStorage('sde_study_checklist', this.checklistMap);
+      this.saveStorage('sde_study_notes', this.notesMap);
+      this.saveStorage('sde_study_quiz_scores', this.quizScoresMap);
+
+      this.showExportToast('Progress restored successfully!');
+      setTimeout(() => {
+        this.closeExportModal();
+        this.init();
+      }, 700);
+    } catch (err) {
+      alert('Invalid backup JSON format. Please verify the copied text.');
+    }
+  }
+
   exportProgress() {
     const backupData = {
       version: 2,
@@ -1320,15 +1858,20 @@ class StudyApp {
       quizScoresMap: this.quizScoresMap
     };
 
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sde_mastery_progress_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sde_mastery_progress_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      this.showExportToast('JSON backup file downloaded!');
+    } catch (e) {
+      this.copyProgressToClipboard();
+    }
   }
 
   importProgress(event) {
@@ -1349,8 +1892,11 @@ class StudyApp {
         this.saveStorage('sde_study_notes', this.notesMap);
         this.saveStorage('sde_study_quiz_scores', this.quizScoresMap);
 
-        alert('Progress imported successfully!');
-        this.init();
+        this.showExportToast('Progress file imported successfully!');
+        setTimeout(() => {
+          this.closeExportModal();
+          this.init();
+        }, 700);
       } catch (err) {
         alert('Invalid backup file. Please select a valid JSON backup exported from this portal.');
       }
@@ -1358,24 +1904,610 @@ class StudyApp {
     reader.readAsText(file);
   }
 
-  resetAllProgress() {
-    if (confirm('Are you sure you want to reset all course progress, checklists, and quiz scores? This cannot be undone.')) {
-      this.statusMap = {};
-      this.checklistMap = {};
-      this.notesMap = {};
-      this.quizScoresMap = {};
+  // ================= SDE-MASTERY AI TUTOR / DOUBT SOLVER =================
+  initAgentUI() {
+    const select = document.getElementById('agent-provider-select');
+    const keyInput = document.getElementById('agent-api-key-input');
+    const keyContainer = document.getElementById('agent-api-key-container');
+    const keyLabel = document.getElementById('agent-api-key-label');
+    const modeBadge = document.getElementById('agent-mode-badge');
+    const geminiHint = document.getElementById('agent-gemini-hint');
 
-      localStorage.removeItem('sde_study_status');
-      localStorage.removeItem('sde_study_checklist');
-      localStorage.removeItem('sde_study_notes');
-      localStorage.removeItem('sde_study_quiz_scores');
-      localStorage.removeItem('sde_study_last_day');
+    if (select) select.value = this.agentProvider;
+    if (keyInput) keyInput.value = this.agentApiKey;
 
-      this.currentDay = 1;
-      this.init();
-      alert('All progress has been reset.');
+    if (keyContainer && select) {
+      if (geminiHint) {
+        if (select.value === 'gemini') geminiHint.classList.remove('hidden');
+        else geminiHint.classList.add('hidden');
+      }
+
+      if (select.value === 'offline') {
+        keyContainer.classList.add('hidden');
+        if (modeBadge) {
+          modeBadge.innerText = '100% Free Built-in';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sage-500/15 text-sage-400 border border-sage-500/25';
+        }
+      } else {
+        keyContainer.classList.remove('hidden');
+        if (select.value === 'gemini') {
+          if (keyLabel) keyLabel.innerText = 'Google Gemini API Key (Free):';
+          if (modeBadge) {
+            modeBadge.innerText = 'Gemini Free Tier';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/25';
+          }
+        } else if (select.value === 'openai') {
+          if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
+          if (modeBadge) {
+            modeBadge.innerText = 'GPT-4o Mini (Paid)';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/25';
+          }
+        } else if (select.value === 'ollama') {
+          if (keyLabel) keyLabel.innerText = 'Ollama Endpoint URL (default http://localhost:11434):';
+          if (modeBadge) {
+            modeBadge.innerText = 'Local Ollama (Free)';
+            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/25';
+          }
+        }
+      }
+    }
+
+    this.updateAgentContextBadge();
+    this.renderAgentChatHistory();
+  }
+
+  updateAgentContextBadge() {
+    const dayEl = document.getElementById('agent-context-day');
+    const modEl = document.getElementById('agent-context-module');
+    if (dayEl) dayEl.innerText = `Day ${this.currentDay}`;
+    if (modEl) {
+      const labels = {
+        overview: 'Overview',
+        dsa: 'DSA',
+        be: 'Backend',
+        fe: 'Frontend',
+        docker: 'Docker',
+        ai: 'AI',
+        others: 'Drills',
+        notes: 'Notes'
+      };
+      modEl.innerText = labels[this.currentModule] || this.currentModule;
     }
   }
+
+  toggleAgentDrawer(forceState) {
+    this.agentOpen = forceState !== undefined ? forceState : !this.agentOpen;
+    const drawer = document.getElementById('agent-drawer');
+    if (drawer) {
+      if (this.agentOpen) {
+        drawer.classList.remove('translate-x-full');
+        this.updateAgentContextBadge();
+        const input = document.getElementById('agent-prompt-input');
+        if (input) setTimeout(() => input.focus(), 200);
+      } else {
+        drawer.classList.add('translate-x-full');
+      }
+    }
+    this.refreshIcons();
+  }
+
+  toggleAgentSettings(forceState) {
+    this.agentSettingsOpen = forceState !== undefined ? forceState : !this.agentSettingsOpen;
+    const panel = document.getElementById('agent-settings-panel');
+    if (panel) {
+      if (this.agentSettingsOpen) panel.classList.remove('hidden');
+      else panel.classList.add('hidden');
+    }
+    this.refreshIcons();
+  }
+
+  onAgentProviderChange() {
+    const select = document.getElementById('agent-provider-select');
+    const keyContainer = document.getElementById('agent-api-key-container');
+    const keyLabel = document.getElementById('agent-api-key-label');
+    const keyInput = document.getElementById('agent-api-key-input');
+    const modeBadge = document.getElementById('agent-mode-badge');
+    const geminiHint = document.getElementById('agent-gemini-hint');
+    if (!select) return;
+
+    this.agentProvider = select.value;
+    this.saveStorage('sde_agent_provider', this.agentProvider);
+
+    if (geminiHint) {
+      if (this.agentProvider === 'gemini') geminiHint.classList.remove('hidden');
+      else geminiHint.classList.add('hidden');
+    }
+
+    if (this.agentProvider === 'offline') {
+      if (keyContainer) keyContainer.classList.add('hidden');
+      if (modeBadge) {
+        modeBadge.innerText = '100% Free Built-in';
+        modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sage-500/15 text-sage-400 border border-sage-500/25';
+      }
+    } else {
+      if (keyContainer) keyContainer.classList.remove('hidden');
+      if (this.agentProvider === 'gemini') {
+        if (keyLabel) keyLabel.innerText = 'Google Gemini API Key (Free):';
+        if (keyInput) keyInput.placeholder = 'AIzaSy...';
+        if (modeBadge) {
+          modeBadge.innerText = 'Gemini Free Tier';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/25';
+        }
+      } else if (this.agentProvider === 'openai') {
+        if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
+        if (keyInput) keyInput.placeholder = 'sk-...';
+        if (modeBadge) {
+          modeBadge.innerText = 'GPT-4o Mini (Paid)';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/25';
+        }
+      } else if (this.agentProvider === 'ollama') {
+        if (keyLabel) keyLabel.innerText = 'Ollama Endpoint URL:';
+        if (keyInput) keyInput.placeholder = 'http://localhost:11434';
+        if (modeBadge) {
+          modeBadge.innerText = 'Local Ollama (Free)';
+          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/25';
+        }
+      }
+    }
+  }
+
+  saveAgentSettings() {
+    const keyInput = document.getElementById('agent-api-key-input');
+    if (keyInput) {
+      this.agentApiKey = keyInput.value.trim();
+      this.saveStorage('sde_agent_key', this.agentApiKey);
+      alert('AI Tutor settings saved successfully!');
+      this.toggleAgentSettings(false);
+      this.initAgentUI();
+    }
+  }
+
+  sendQuickDoubt(promptText) {
+    const input = document.getElementById('agent-prompt-input');
+    if (input) {
+      input.value = promptText;
+      this.handleAgentSubmit(new Event('submit'));
+    }
+  }
+
+  async handleAgentSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (this.agentIsTyping) return;
+
+    const input = document.getElementById('agent-prompt-input');
+    if (!input) return;
+    const query = input.value.trim();
+    if (!query) return;
+
+    input.value = '';
+    this.appendAgentMessage('user', query);
+
+    const typingEl = document.getElementById('agent-typing-indicator');
+    if (typingEl) typingEl.classList.remove('hidden');
+    this.agentIsTyping = true;
+
+    const chatContainer = document.getElementById('agent-chat-messages');
+    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    try {
+      const responseMarkdown = await this.generateAgentResponse(query);
+      if (typingEl) typingEl.classList.add('hidden');
+      this.agentIsTyping = false;
+      this.appendAgentMessage('assistant', responseMarkdown);
+    } catch (err) {
+      console.error('Agent error:', err);
+      if (typingEl) typingEl.classList.add('hidden');
+      this.agentIsTyping = false;
+      const fallbackAns = this.resolveDoubtOffline(query, {
+        dayNum: this.currentDay,
+        dayTitle: this.data.days[this.currentDay]?.title || 'Topic',
+        moduleKey: this.currentModule
+      });
+      this.appendAgentMessage('assistant', `⚠️ *Notice: Live API call could not be completed (${err.message || 'Network/Key error'}). Switched to Built-in Knowledge Engine:*\n\n` + fallbackAns);
+    }
+  }
+
+  appendAgentMessage(role, text) {
+    this.agentChatHistory.push({ role, text, timestamp: new Date().toISOString() });
+    if (this.agentChatHistory.length > 40) this.agentChatHistory.shift();
+    this.saveStorage('sde_agent_history', this.agentChatHistory);
+    this.renderAgentChatHistory();
+  }
+
+  renderAgentChatHistory() {
+    const container = document.getElementById('agent-chat-messages');
+    if (!container) return;
+
+    if (this.agentChatHistory.length === 0) {
+      container.innerHTML = `
+        <div class="flex items-start space-x-2.5">
+          <div class="w-6 h-6 rounded bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+            <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="bg-surface-2 p-3 rounded-lg rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 max-w-[90%]">
+            <p class="font-medium text-white">Hello! I am your <strong>SDE-Mastery AI Tutor</strong>.</p>
+            <p class="text-slate-300 leading-relaxed">
+              I am here to resolve any doubts you encounter across:
+            </p>
+            <ul class="list-disc list-inside space-y-1 text-slate-400 font-mono text-[11px]">
+              <li><strong>DSA</strong>: Memory models, pointer proofs, LeetCode patterns</li>
+              <li><strong>Backend</strong>: V8 internals, execution contexts, TDZ, GC</li>
+              <li><strong>Frontend</strong>: React 18/19 Fiber, diffing, reconciliation</li>
+              <li><strong>Docker</strong>: Namespaces, cgroups, memory limits, OOM 137</li>
+              <li><strong>AI</strong>: Tokens, BPE, structured JSON schemas, RAG, agents</li>
+            </ul>
+            <p class="text-slate-400 text-[11px]">
+              Ask me anything about the current day's lessons, drills, or homework!
+            </p>
+          </div>
+        </div>
+      `;
+      this.refreshIcons();
+      return;
+    }
+
+    const escapeText = (str) => {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
+
+    let html = '';
+    this.agentChatHistory.forEach(msg => {
+      if (msg.role === 'user') {
+        html += `
+          <div class="flex justify-end">
+            <div class="bg-purple-600/25 text-purple-200 border border-purple-500/35 p-2.5 rounded-lg rounded-tr-none max-w-[85%] leading-relaxed font-sans text-xs">
+              ${escapeText(msg.text)}
+            </div>
+          </div>
+        `;
+      } else {
+        const parsedMd = window.marked ? marked.parse(msg.text) : msg.text;
+        html += `
+          <div class="flex items-start space-x-2.5">
+            <div class="w-6 h-6 rounded bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+              <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+            </div>
+            <div class="bg-surface-2 p-3 rounded-lg rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 max-w-[90%] markdown-body text-xs">
+              ${parsedMd}
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+    this.refreshIcons();
+  }
+
+  clearAgentChat() {
+    this.agentChatHistory = [];
+    this.saveStorage('sde_agent_history', []);
+    this.renderAgentChatHistory();
+  }
+
+  async generateAgentResponse(userQuery) {
+    const dayNum = this.currentDay;
+    const dayData = this.data.days[dayNum] || {};
+    const dayTitle = dayData.title || `Day ${dayNum}`;
+    const moduleKey = this.currentModule;
+    const pageExcerpt = document.getElementById('markdown-container')?.innerText.slice(0, 1400) || '';
+
+    const ctx = { dayNum, dayTitle, moduleKey, pageExcerpt };
+
+    // 1. Google Gemini API
+    if (this.agentProvider === 'gemini' && this.agentApiKey) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(this.agentApiKey)}`;
+      const sysPrompt = `You are the SDE-Mastery 40 Senior Principal Staff Engineer and AI Tutor. The student is studying Day ${dayNum}: "${dayTitle}", currently focusing on the "${moduleKey.toUpperCase()}" module. Current curriculum excerpt:\n"""${pageExcerpt.slice(0, 800)}"""\n\nAnswer the user's doubt with absolute technical rigor, step-by-step clarity, code snippets (TypeScript/JavaScript/Docker/Python), memory layout diagrams if helpful, and senior FAANG interview advice. Format in clean GitHub-flavored markdown.`;
+      
+      const payload = {
+        contents: [
+          { role: 'user', parts: [{ text: `${sysPrompt}\n\nStudent Doubt / Question: ${userQuery}` }] }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1024
+        }
+      };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(`Gemini Error ${res.status}: ${errJson.error?.message || res.statusText}`);
+      }
+
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received from Gemini.";
+    }
+
+    // 2. OpenAI API
+    if (this.agentProvider === 'openai' && this.agentApiKey) {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.agentApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are the SDE-Mastery 40 Senior Principal AI Tutor. The student is on Day ${dayNum}: ${dayTitle}, module: ${moduleKey}. Current excerpt: ${pageExcerpt.slice(0, 600)}. Answer doubts with rigorous technical clarity, code examples, and FAANG interview takeaways in clean markdown.`
+            },
+            { role: 'user', content: userQuery }
+          ],
+          temperature: 0.2
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(`OpenAI Error ${res.status}: ${errJson.error?.message || res.statusText}`);
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "No response received from OpenAI.";
+    }
+
+    // 3. Local Ollama / LM Studio
+    if (this.agentProvider === 'ollama') {
+      const endpoint = (this.agentApiKey || 'http://localhost:11434').replace(/\/$/, '') + '/api/chat';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3',
+          messages: [
+            {
+              role: 'system',
+              content: `You are the SDE-Mastery AI Tutor for Day ${dayNum} (${moduleKey}). Answer technical doubts with high precision in markdown.`
+            },
+            { role: 'user', content: userQuery }
+          ],
+          stream: false
+        })
+      });
+
+      if (!res.ok) throw new Error(`Ollama Error ${res.status}: Is Ollama running on localhost:11434?`);
+      const data = await res.json();
+      return data.message?.content || "No response received from Ollama.";
+    }
+
+    // 4. Built-in Offline Expert Knowledge Engine (No key required!)
+    return this.resolveDoubtOffline(userQuery, ctx);
+  }
+
+  resolveDoubtOffline(query, ctx = {}) {
+    const q = (query || '').toLowerCase();
+    const day = ctx.dayNum || this.currentDay;
+    const mod = ctx.moduleKey || this.currentModule;
+
+    // --- Specific DSA Queries ---
+    if (q.includes('unshift') || (q.includes('array') && q.includes('o(n)'))) {
+      return `### 💡 Why \`arr.unshift()\` is $O(N)$ vs \`arr[i]\` is $O(1)$
+
+1. **Physical RAM Contiguity**:
+   Arrays are stored in contiguous physical memory addresses. When you access \`arr[i]\`, the CPU evaluates:
+   $$\\text{Address} = \\text{Base} + (i \\times \\text{sizeof}(T))$$
+   This is a **single arithmetic operation**, making index reads $O(1)$ constant time.
+2. **The Unshift Penalty**:
+   Inserting at index 0 requires physically shifting every existing element in the memory block one slot to the right:
+   \`\`\`
+   Initial:  [ A ] [ B ] [ C ] [ D ]
+   Shift:      ↘     ↘     ↘     ↘
+   Result:   [ X ] [ A ] [ B ] [ C ] [ D ]
+   \`\`\`
+   For $N = 1,000,000$ items, that is $1,000,000$ hardware memory moves ($O(N)$ linear time).
+3. **Interview Takeaway**:
+   If you need frequent $O(1)$ insertions/removals at both ends, use a **Doubly Linked List** or **Deque** (circular ring buffer) rather than an array.`;
+    }
+
+    if (q.includes('two sum') || (q.includes('two pointer') && q.includes('sorted'))) {
+      return `### 💡 Two-Pointer Technique on Sorted Arrays (Two Sum II)
+
+* **Why Two Pointers Work**:
+  In a sorted array, placing pointer $L$ at the beginning ($0$) and $R$ at the end ($N-1$) establishes a monotonic invariant:
+  - If \`nums[L] + nums[R] < target\`: Because $R$ points to the largest available number, the only way to increase the sum is to advance $L$ (\`L++\`).
+  - If \`nums[L] + nums[R] > target\`: The only way to decrease the sum is to decrement $R$ (\`R--\`).
+* **Complexity Proof**:
+  - **Time**: $O(N)$ — Every iteration decrements $R$ or increments $L$. Pointers meet in at most $N$ steps.
+  - **Space**: $O(1)$ — Only two index variables are used.
+* **Senior FAANG Follow-up**:
+  *"What if the array is NOT sorted?"*
+  - If unsorted and you must preserve original 0-based indices, use a **One-Pass Hash Map** ($O(N)$ time, $O(N)$ space) because sorting would take $O(N \\log N)$ and scramble original indices.`;
+    }
+
+    if (q.includes('move zero') || (q.includes('in-place') && q.includes('zero'))) {
+      return `### 💡 In-Place Array Partition (Move Zeroes)
+
+* **Algorithm Blueprint**:
+  Use a **Fast Reader Pointer** and a **Slow Writer Pointer**:
+  \`\`\`typescript
+  function moveZeroes(nums: number[]): void {
+    let writer = 0;
+    for (let reader = 0; reader < nums.length; reader++) {
+      if (nums[reader] !== 0) {
+        if (reader !== writer) {
+          [nums[writer], nums[reader]] = [nums[reader], nums[writer]];
+        }
+        writer++;
+      }
+    }
+  }
+  \`\`\`
+* **Loop Invariant**:
+  At any step, all elements before \`writer\` are non-zero in original relative order; all elements between \`writer\` and \`reader\` are zeros. Exactly $O(N)$ time, $O(1)$ auxiliary space.`;
+    }
+
+    // --- Specific Backend & V8 Queries ---
+    if (q.includes('tdz') || q.includes('temporal dead zone') || q.includes('hoisting')) {
+      return `### 🧠 V8 Hoisting & Temporal Dead Zone (TDZ) Deep-Dive
+
+1. **Creation Phase Memory Allocation**:
+   Before executing line 1, V8 scans the script during the **Creation Phase**:
+   - \`var\`: Memory is allocated on the Variable Environment and initialized to \`undefined\`.
+   - \`let\` / \`const\`: Memory binding is registered in the Lexical Environment, but left **uninitialized**.
+2. **What is the TDZ?**:
+   The TDZ is the span from the start of the lexical block until the line where \`let\`/\`const\` declaration is evaluated.
+   \`\`\`javascript
+   {
+     // === TDZ for 'count' START ===
+     console.log(count); // Throws ReferenceError!
+     // === TDZ for 'count' END ===
+     let count = 42; 
+   }
+   \`\`\`
+3. **Why did TC39 introduce the TDZ?**:
+   To catch runtime bugs early! Accessing variables before declaration in production is almost always a logical flaw. \`var\` silently returning \`undefined\` causes hard-to-trace bugs.`;
+    }
+
+    if (q.includes('v8') || q.includes('turbofan') || q.includes('ignition') || q.includes('jit')) {
+      return `### ⚡ Google V8 Engine Architecture
+
+1. **Parser & AST**: Source code is parsed into an Abstract Syntax Tree (AST).
+2. **Ignition (Bytecode Interpreter)**: Compiles AST into register-based bytecode. Boots the app in milliseconds without waiting for heavy native compilation.
+3. **TurboFan (JIT Optimizing Compiler)**:
+   - Observes "hot functions" executed repeatedly.
+   - Makes speculative assumptions (e.g., *"this function always receives two 32-bit integers"*).
+   - Compiles them directly into optimized machine code.
+4. **De-optimization Trap**:
+   If a function that previously only processed numbers suddenly receives a string or object with a different **Hidden Class / Shape**, TurboFan bails out, throws away the machine code, and drops back to interpreted bytecode.
+   - **Backend Takeaway**: Keep object shapes and function parameter types uniform!`;
+    }
+
+    // --- Specific Frontend & React Queries ---
+    if (q.includes('key={index}') || q.includes('index as key') || (q.includes('key') && q.includes('react'))) {
+      return `### 🎨 The \`key={index}\` State Corruption Trap in React
+
+* **The Problem**:
+  React uses \`key\` to correlate Virtual DOM nodes between renders.
+  If an array has 3 items:
+  \`\`\`
+  [Key 0: "Task A" (checked)]
+  [Key 1: "Task B"]
+  [Key 2: "Task C"]
+  \`\`\`
+  When you delete "Task A", "Task B" becomes index \`0\`, and "Task C" becomes index \`1\`.
+* **Reconciliation Diffing Bug**:
+  React compares the new \`key=0\` ("Task B") with the old \`key=0\` ("Task A"). Because \`type\` and \`key\` match, React **reuses the existing DOM node** and preserves the old node's uncontrolled DOM state (e.g. checkbox or input text) on the wrong task!
+* **The Rule**:
+  Always use stable, unique entity IDs (\`key={todo.id}\`). Only use \`index\` if the list is strictly static and never filtered, sorted, or mutated.`;
+    }
+
+    if (q.includes('fiber') || q.includes('reconciliation') || q.includes('virtual dom')) {
+      return `### ⚛️ React 18/19 Fiber Reconciler
+
+1. **Why Fiber replaced the Stack Reconciler**:
+   React 15 used recursive stack diffing which could not be interrupted. On large trees, this caused frame drops (>16ms).
+2. **Fiber Node Linked List**:
+   Fiber models components as a mutable linked list:
+   - \`child\`: Points to first child
+   - \`sibling\`: Points to next sibling
+   - \`return\`: Points to parent
+3. **Two-Phase Architecture**:
+   - **Render Phase (Interruptible)**: React computes diffs in the background, yielding to the browser via \`requestIdleCallback\` / scheduler priority lanes.
+   - **Commit Phase (Synchronous)**: Once diffs are calculated, React applies DOM mutations in one synchronous burst to avoid visual tearing.`;
+    }
+
+    // --- Specific Docker & DevOps Queries ---
+    if (q.includes('namespace') || q.includes('cgroup') || q.includes('137') || q.includes('oom')) {
+      return `### 🐳 Linux Containers, Cgroups & Exit Code 137
+
+1. **Namespaces vs Cgroups**:
+   - **Namespaces (Isolation)**: Control **what a container can see** (\`pid\` process tree, \`net\` network ports/routes, \`mnt\` mount points).
+   - **Control Groups / Cgroups (Resource Throttling)**: Control **how much a container can use** (maximum RAM, CPU bandwidth quotas).
+2. **Decoding Exit Code 137**:
+   $$137 = 128 + 9 \\text{ (SIGKILL)}$$
+   When container memory exceeds \`--memory 512m\`, the Linux kernel's **OOM Killer** (\`oom_kill_process\`) immediately halts memory allocation and kills the process with \`kill -9\`.
+3. **How to Diagnose**:
+   - Host inspection: \`dmesg -T | grep -i oom\`
+   - Check cgroup limit: \`cat /sys/fs/cgroup/memory.events\`
+   - Fix: Increase container memory or profile Node.js heap leaks via \`--max-old-space-size\`.`;
+    }
+
+    // --- Specific AI & LLM Queries ---
+    if (q.includes('token') || q.includes('bpe') || q.includes('prefill') || q.includes('structured output')) {
+      return `### 🤖 LLM Tokens, Prefill vs Decoding & Structured Schemas
+
+1. **Byte-Pair Encoding (BPE)**:
+   LLMs process numeric token IDs, not words. Common subwords are iteratively merged into a dictionary vocabulary ($\sim 32\\text{k}$ to $128\\text{k}$ tokens).
+2. **Cost & Latency Asymmetry**:
+   - **Input Prefill**: All prompt tokens are processed **in parallel across GPU tensor cores** in a single forward pass ($O(1)$ batch pass, $\\sim 20\\text{ms}$).
+   - **Output Decoding**: Strictly **auto-regressive**. Every new token must be predicted one-by-one sequentially ($O(K)$ latency, $\\sim 25\\text{ms per token}$).
+3. **Strict Structured JSON Outputs**:
+   Modern engines (vLLM, Outlines, OpenAI Structured Outputs) compile JSON schemas into a Context-Free Grammar (CFG). During auto-regressive sampling, tokens that violate the schema syntax have their logits masked to $-\\infty$, guaranteeing **100% syntactically valid JSON output** without prompt hallucination.`;
+    }
+
+    // --- Event Loop Drill Query ---
+    if (q.includes('event loop') || q.includes('microtask') || q.includes('drill 1')) {
+      return `### ⚡ Master Event Loop Execution Rules
+
+1. **Promise Executors run SYNCHRONOUSLY**:
+   In \`new Promise((resolve) => { console.log('6'); resolve(); })\`, the function runs **immediately on the Call Stack**, NOT in the background!
+2. **Microtasks Preempt Macrotasks**:
+   - **Microtask Queue**: \`Promise.then()\`, \`queueMicrotask()\`, \`process.nextTick\` (Node).
+   - **Macrotask Queue**: \`setTimeout()\`, \`setInterval()\`, \`setImmediate()\` (Node), I/O events.
+3. **Queue Draining Guarantee**:
+   The Event Loop **must drain the entire Microtask Queue to zero** before picking up the next Macrotask!
+4. **Final Sequence for Drill 1**:
+   $$\\mathbf{1 \\longrightarrow 6 \\longrightarrow 8 \\longrightarrow 3 \\longrightarrow 5 \\longrightarrow 7 \\longrightarrow 4 \\longrightarrow 2}$$`;
+    }
+
+    // --- Quick Prompt Intent Handlers ---
+    if (q.includes('explain simply') || q.includes('like i\'m 5')) {
+      return `### 💡 High-Level Analogy for Day ${day} (${mod.toUpperCase()})
+
+Think of **Day ${day}** as building a high-performance racecar:
+* **The CPU / RAM** is the physical engine and fuel injectors (Arrays occupy sequential fuel slots for $O(1)$ instant injection).
+* **V8 Engine** is the intelligent automatic transmission: it starts in low gear (Ignition interpreter) and shifts to turbo overdrive (TurboFan compiler) once you hit cruising speed.
+* **React Fiber** is the cooperative pit-stop crew: instead of stopping the race for 10 minutes to change all 4 tires at once, they swap one lug nut at a time between high-speed laps.
+* **Docker Containers** are standardized shipping containers: they don't carry their own engine (host kernel); they just isolate cargo using strict compartments (namespaces) and weight scales (cgroups).`;
+    }
+
+    if (q.includes('interview question') || q.includes('mock interview')) {
+      return `### 🎯 Top 3 Senior FAANG Interview Questions (Day ${day} • ${mod.toUpperCase()})
+
+1. **DSA Architecture**: *"Why is searching an element in a Hash Table $O(1)$ average but $O(N)$ worst-case, and how does the CPU L1/L2 cache locality of an Array compare to a Hash Map in real-world benchmarks?"*
+   - *Key Answer Point*: Hash collisions cause bucket chaining ($O(N)$); arrays offer hardware spatial prefetching (64-byte cache lines) which outperforms pointer-chasing node lookups.
+2. **Backend Engine**: *"Explain what happens to V8 heap memory when an inner function creates a closure over a large buffer, and how the Scavenger GC differs from the Mark-Sweep-Compact Major GC."*
+   - *Key Answer Point*: Shared Lexical Environments retain parent scope objects preventing GC collection; Young Generation (Nursery/Intermediate) uses Cheney's copying algorithm, Old Generation uses Mark-Sweep.
+3. **DevOps & Containers**: *"A containerized Node.js service suddenly exits with code 137 under high traffic. How do you identify whether it was caused by Node heap exhaustion or a kernel cgroup OOM event?"*
+   - *Key Answer Point*: Check host \`dmesg -T | grep -i oom\` and \`/sys/fs/cgroup/memory.events\`. Node heap exhaustion usually logs \`JavaScript heap out of memory\` before exit code 1.`;
+    }
+
+    if (q.includes('common pitfall') || q.includes('production bug')) {
+      return `### 🐛 Top 3 Production Pitfalls on Day ${day}
+
+1. **Unintended Lexical Closure Leaks**: Storing long-lived callbacks in module-level arrays or event listeners without calling \`removeListener()\` prevents V8 GC from reclaiming entire lexical scopes.
+2. **Uncontrolled Input State Retention with \`key={index}\`**: Reordering or deleting items in a React list using array index preserves old input text/checkbox state on new rows.
+3. **Docker Host Port Exhaustion**: Forgetting to configure connection pooling (e.g. \`pg.Pool\` in Node) allows containers to exhaust host TCP ephemeral socket ports under load.`;
+    }
+
+    // Default contextual answer
+    return `### 🤖 SDE-Mastery Tutor Response — Day ${day}: ${ctx.dayTitle}
+
+You asked: *"**${escapeHtml(query)}**"*
+
+#### Technical Breakdown for Module: \`${(mod || 'curriculum').toUpperCase()}\`
+1. **Core Concept Overview**:
+   On Day ${day}, you are mastering ${ctx.dayTitle}. In production systems and senior engineering interviews, you are expected to explain the underlying physical mechanics—not just the surface syntax.
+2. **Key Architectural Rule**:
+   - Ensure algorithmic time/space invariants are preserved ($O(1)$ space for two pointers).
+   - For backend execution, align with V8's optimization pipeline (uniform object shapes).
+   - In containerized deployments, always configure explicit cgroup resource bounds (\`--memory\`, \`--cpus\`).
+3. **Next Recommended Step**:
+   - Select the **Drills** tab to test your execution prediction on the interactive VM simulator.
+   - Try the DSA problem in the built-in LeetCode playground.
+
+*(Tip: You can also connect a free Google Gemini or OpenAI API key in the ⚙️ settings above for unlimited custom LLM streaming!)*`;
+  }
+
 }
 
 // Global App Instance
