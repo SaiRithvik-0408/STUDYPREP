@@ -53,7 +53,7 @@ class StudyApp {
       }
     })();
     this.aiAccessPin = '0408';
-    this.isPinUnlocked = this.loadStorage('sde_ai_pin_unlocked', false);
+    this.isPinUnlocked = true; // API key is pre-configured and active by default
     // Auto-sanitize saved custom key in case the user pasted curl commands or trailing tokens
     this.agentApiKey = this.cleanApiKey(this.loadStorage('sde_agent_key', ''));
     if (this.agentApiKey) this.saveStorage('sde_agent_key', this.agentApiKey);
@@ -2399,29 +2399,10 @@ class StudyApp {
     if (select) select.value = this.agentProvider;
     if (keyInput) keyInput.value = this.agentApiKey;
 
-    const hasCustomKey = !!this.agentApiKey && this.agentApiKey.trim().length > 0;
-
-    const geminiBtnLabel = document.getElementById('gemini-key-status-label');
-    if (geminiBtnLabel) {
-      if (hasCustomKey) {
-        geminiBtnLabel.innerText = 'Custom Key ✅';
-      } else if (this.isPinUnlocked) {
-        geminiBtnLabel.innerText = 'Gemini Active ✅';
-      } else {
-        geminiBtnLabel.innerText = 'Enter PIN (0408)';
-      }
-    }
-
     if (pinStatusTag) {
-      if (this.isPinUnlocked) {
-        pinStatusTag.innerText = 'Unlocked ✅';
-        pinStatusTag.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-sage-500/20 text-sage-400 border border-sage-500/30';
-        if (btnLockPin) btnLockPin.classList.remove('hidden');
-      } else {
-        pinStatusTag.innerText = 'Locked 🔒';
-        pinStatusTag.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-surface-3 text-slate-400 border border-white/[0.08]';
-        if (btnLockPin) btnLockPin.classList.add('hidden');
-      }
+      pinStatusTag.innerText = 'Connected ⚡';
+      pinStatusTag.className = 'text-[9px] px-1.5 py-0.2 rounded font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      if (btnLockPin) btnLockPin.classList.add('hidden');
     }
 
     if (keyContainer && select) {
@@ -2433,30 +2414,22 @@ class StudyApp {
       if (select.value === 'offline') {
         keyContainer.classList.add('hidden');
         if (modeBadge) {
-          modeBadge.innerText = '100% Free Built-in';
-          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sage-500/15 text-sage-400 border border-sage-500/25';
+          modeBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span><span>Offline Engine</span>`;
+          modeBadge.className = 'text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-500/15 text-slate-300 border border-slate-500/25 font-semibold flex items-center gap-1.5';
         }
       } else if (select.value === 'gemini') {
         keyContainer.classList.remove('hidden');
-        if (keyLabel) keyLabel.innerText = 'Or Provide Your Own Gemini / OpenAI API Key (Optional):';
+        if (keyLabel) keyLabel.innerText = 'Personal Gemini / OpenAI API Key (Optional Override):';
         if (modeBadge) {
-          if (hasCustomKey) {
-            modeBadge.innerText = 'Gemini (Custom Key)';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-sage-500/15 text-sage-400 border border-sage-500/25';
-          } else if (this.isPinUnlocked) {
-            modeBadge.innerText = 'Gemini 3.5 Flash';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25';
-          } else {
-            modeBadge.innerText = 'PIN: 0408 Required';
-            modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-terracotta-500/15 text-terracotta-400 border border-terracotta-500/25';
-          }
+          modeBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>Gemini 3.8 Flash</span>`;
+          modeBadge.className = 'text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1.5 shadow-sm';
         }
       } else if (select.value === 'openai') {
         keyContainer.classList.remove('hidden');
         if (keyLabel) keyLabel.innerText = 'OpenAI API Key (Paid):';
         if (modeBadge) {
-          modeBadge.innerText = 'GPT-4o Mini (Paid)';
-          modeBadge.className = 'text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25';
+          modeBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span><span>GPT-4o Mini</span>`;
+          modeBadge.className = 'text-[9px] font-mono px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/25 font-semibold flex items-center gap-1.5';
         }
       }
     }
@@ -2562,6 +2535,7 @@ class StudyApp {
         this.updateAgentContextBadge();
         const input = document.getElementById('agent-prompt-input');
         if (input) setTimeout(() => input.focus(), 200);
+        this.scrollChatToBottom(false);
       } else {
         drawer.classList.add('translate-x-full');
         drawer.classList.remove('open');
@@ -2688,22 +2662,18 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
       this.appendAgentMessage('assistant', `### 🎉 Custom Gemini API Key Connected!
 
 Your API key has been securely saved in your browser's \`localStorage\`.
-The AI Tutor is now powered by your personal key on **Google Gemini 3.5 Flash**.
+The AI Tutor is now powered by your personal key on **Google Gemini 3.8 Flash**.
 
 Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code execution, or system architecture!`);
       return;
     }
 
-    // If Gemini is selected but not unlocked with PIN and no custom key:
+    // If Gemini is selected but no key available:
     if (this.agentProvider === 'gemini' && !this.getEffectiveGeminiKey()) {
-      const pinOrKey = prompt('🔐 AI Tutor Access Verification:\n\nTo use Google Gemini Cloud AI, enter PIN (0408):\n\n👉 OR paste your own Gemini API key (starts with AQ... or AIzaSy...):\n\n(Click Cancel to use the 100% Free Offline Knowledge Engine)', '0408');
+      const pinOrKey = prompt('🔐 AI Tutor Access Verification:\n\n👉 Paste your Gemini API key (starts with AQ... or AIzaSy...):', '');
       if (pinOrKey !== null) {
         const clean = pinOrKey.trim();
-        if (clean === this.aiAccessPin) {
-          this.isPinUnlocked = true;
-          this.saveStorage('sde_ai_pin_unlocked', true);
-          this.initAgentUI();
-        } else if (this.isGeminiKey(clean)) {
+        if (this.isGeminiKey(clean)) {
           this.agentApiKey = this.cleanApiKey(clean);
           this.saveStorage('sde_agent_key', this.agentApiKey);
           this.initAgentUI();
@@ -2717,9 +2687,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     const typingEl = document.getElementById('agent-typing-indicator');
     if (typingEl) typingEl.classList.remove('hidden');
     this.agentIsTyping = true;
-
-    const chatContainer = document.getElementById('agent-chat-messages');
-    if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+    this.scrollChatToBottom(true);
 
     try {
       const responseMarkdown = await this.generateAgentResponse(query);
@@ -2744,6 +2712,23 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     }
   }
 
+  scrollChatToBottom(smooth = true) {
+    const container = document.getElementById('agent-chat-messages');
+    if (!container) return;
+    const doScroll = () => {
+      container.scrollTop = container.scrollHeight;
+      const lastChild = container.lastElementChild;
+      if (lastChild && typeof lastChild.scrollIntoView === 'function') {
+        lastChild.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'end' });
+      }
+    };
+    doScroll();
+    requestAnimationFrame(doScroll);
+    setTimeout(doScroll, 60);
+    setTimeout(doScroll, 200);
+    setTimeout(doScroll, 450);
+  }
+
   appendAgentMessage(role, text) {
     this.agentChatHistory.push({ role, text, timestamp: new Date().toISOString() });
     if (this.agentChatHistory.length > 40) this.agentChatHistory.shift();
@@ -2756,49 +2741,28 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     if (!container) return;
 
     if (this.agentChatHistory.length === 0) {
-      const hasCustom = !!this.agentApiKey && this.agentApiKey.trim().length > 0;
-      const isUnlocked = this.isPinUnlocked || hasCustom;
-
-      const cardHtml = isUnlocked ? `
-        <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-rose-500/30 flex items-center justify-between text-xs font-mono">
-          <div>
-            <span class="text-rose-400 font-bold block">✨ Google Gemini Cloud AI Active</span>
-            <span class="text-[10px] text-slate-400">${hasCustom ? 'Custom API Key' : 'Unlocked with PIN 0408'} • Gemini 3.5 Flash</span>
+      const cardHtml = `
+        <div class="mt-2 p-2.5 rounded-xl bg-surface-1 border border-emerald-500/30 flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div>
+              <span class="text-emerald-400 font-bold block text-[11px]">Google Gemini 3.8 Flash Online</span>
+              <span class="text-[10px] text-slate-400">Ask any doubt across DSA, Backend, Frontend, Docker & AI!</span>
+            </div>
           </div>
-          <button onclick="app.promptPinOrKey()" class="px-2.5 py-1 bg-surface-2 hover:bg-surface-3 text-slate-300 font-medium rounded-lg text-[11px] border border-white/[0.08] transition">
-            Change Key / PIN
+          <button onclick="app.toggleAgentSettings(true)" class="px-2 py-1 rounded bg-surface-2 hover:bg-surface-3 text-slate-300 border border-white/[0.08] text-[10px] transition flex items-center gap-1">
+            <i data-lucide="settings" class="w-3 h-3"></i>
+            <span>Settings</span>
           </button>
-        </div>
-      ` : `
-        <div class="mt-2 p-3 rounded-xl bg-surface-1 border border-rose-500/30 text-xs font-mono space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-rose-400 font-bold flex items-center gap-1.5">
-              <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-              <span>✨ Google Gemini Cloud AI</span>
-            </span>
-            <span class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/25">PIN: 0408</span>
-          </div>
-          <p class="text-[11px] text-slate-300">
-            Enter PIN <strong class="text-white font-mono">0408</strong> to unlock pre-configured Gemini AI, or provide your own API key.
-          </p>
-          <div class="flex items-center gap-2 pt-1 flex-wrap">
-            <input type="password" id="agent-pin-quick-input" placeholder="Enter PIN 0408..." maxlength="10" class="w-28 px-2.5 py-1.5 bg-surface-2 border border-white/[0.12] rounded-lg text-slate-200 text-xs focus:outline-none focus:border-red-500 font-mono" onkeydown="if(event.key==='Enter'){event.preventDefault();app.verifyAndUnlockPin(this.value);}">
-            <button onclick="app.verifyAndUnlockPin(document.getElementById('agent-pin-quick-input')?.value)" class="px-3 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-lg text-xs transition shadow-sm">
-              Unlock
-            </button>
-            <button onclick="app.toggleAgentSettings(true)" class="px-2.5 py-1.5 bg-surface-2 hover:bg-surface-3 text-slate-300 rounded-lg text-xs border border-white/[0.08] transition">
-              Provide My Own Key
-            </button>
-          </div>
         </div>
       `;
 
       container.innerHTML = `
-        <div class="flex items-start space-x-2.5">
+        <div class="flex items-start space-x-2.5 w-full min-w-0">
           <div class="w-6 h-6 rounded bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 mt-0.5">
             <i data-lucide="bot" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="bg-surface-2 p-3 rounded-lg rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 max-w-[90%]">
+          <div class="flex-1 min-w-0 bg-surface-2 p-3.5 rounded-xl rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 text-xs">
             <p class="font-medium text-white">Hello! I am your <strong>SDE-Mastery AI Tutor</strong>.</p>
             <p class="text-slate-300 leading-relaxed">
               I am here to resolve any doubts you encounter across:
@@ -2820,6 +2784,7 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
         </div>
       `;
       this.refreshIcons();
+      this.scrollChatToBottom(false);
       return;
     }
 
@@ -2831,8 +2796,8 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     this.agentChatHistory.forEach(msg => {
       if (msg.role === 'user') {
         html += `
-          <div class="flex justify-end">
-            <div class="bg-rose-600/25 text-rose-200 border border-rose-500/35 p-2.5 rounded-lg rounded-tr-none max-w-[85%] leading-relaxed font-sans text-xs">
+          <div class="flex justify-end w-full min-w-0">
+            <div class="bg-rose-600/25 text-rose-200 border border-rose-500/35 p-2.5 rounded-xl rounded-tr-none max-w-[85%] leading-relaxed font-sans text-xs break-words overflow-hidden">
               ${escapeText(msg.text)}
             </div>
           </div>
@@ -2840,11 +2805,11 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
       } else {
         const parsedMd = window.marked ? marked.parse(msg.text) : msg.text;
         html += `
-          <div class="flex items-start space-x-2.5">
+          <div class="flex items-start space-x-2.5 w-full min-w-0">
             <div class="w-6 h-6 rounded bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 flex-shrink-0 mt-0.5">
               <i data-lucide="bot" class="w-3.5 h-3.5"></i>
             </div>
-            <div class="bg-surface-2 p-3 rounded-lg rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 max-w-[90%] markdown-body text-xs">
+            <div class="flex-1 min-w-0 bg-surface-2 p-3.5 rounded-xl rounded-tl-none border border-white/[0.08] text-slate-200 space-y-2 markdown-body text-xs break-words overflow-hidden">
               ${parsedMd}
             </div>
           </div>
@@ -2853,8 +2818,8 @@ Feel free to ask any doubt about Day ${this.currentDay}'s lessons, code executio
     });
 
     container.innerHTML = html;
-    container.scrollTop = container.scrollHeight;
     this.refreshIcons();
+    this.scrollChatToBottom(true);
   }
 
   clearAgentChat() {
