@@ -179,41 +179,49 @@
         <!-- Unified Sticky Top Bar: Day Details + Merged Navigation Tabs with Integrated Checklist -->
         <div id="sticky-header-bar" class="sticky top-0 z-30 bg-surface-1/95 border-b border-white/[0.08] backdrop-blur-md">
           
-          <!-- Top Row: Day Title, Phase, Status Badge, Quick Actions -->
-          <div class="px-4 lg:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-white/[0.05]">
-            <div class="flex items-center space-x-3">
-              <div>
+          <!-- Top Row: Status & Actions (Left) + Day Description + Day Navigation (Right) -->
+          <div class="px-4 lg:px-6 py-2.5 flex items-center justify-between gap-3 border-b border-white/[0.05] flex-wrap sm:flex-nowrap">
+            
+            <!-- Left Side: Status Badge, Mark Day Done, and Task Description -->
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              
+              <!-- Status Pill & Mark Day Done Button (to the left of description) -->
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <div id="day-auto-status" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-xs font-mono" title="Day Progress Status">
+                  <span id="day-auto-status-indicator">⚪</span>
+                  <span id="day-auto-status-text" class="text-slate-300">Not Started (0/6)</span>
+                </div>
+
+                <!-- Mark Day Done Button -->
+                <button onclick="app.markEntireDayDone()" class="flex items-center space-x-1 px-2.5 py-1 rounded-md bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-[11px] font-mono text-slate-300 hover:text-white transition" title="Mark all 6 sections for this day as completed">
+                  <i data-lucide="check-check" class="w-3.5 h-3.5 text-sage-400"></i>
+                  <span>Mark Day Done</span>
+                </button>
+              </div>
+
+              <!-- Subtle vertical divider -->
+              <div class="h-6 w-px bg-white/[0.08] flex-shrink-0 hidden sm:block"></div>
+
+              <!-- Task Description (Phase Badge + Day Title) -->
+              <div class="min-w-0 flex-1">
                 <div class="flex items-center space-x-2 text-[11px] font-mono text-cyan-400 mb-0.5">
                   <span id="current-day-phase-badge">Phase 1: Foundations</span>
                   <span>•</span>
                   <span id="current-day-number-badge">Day 1 of 40</span>
                 </div>
-                <h1 id="current-day-title" class="font-display text-base lg:text-lg font-bold text-white tracking-tight">Day Title Loading...</h1>
+                <h1 id="current-day-title" class="font-display text-base lg:text-lg font-bold text-white tracking-tight truncate">Day Title Loading...</h1>
               </div>
+
             </div>
 
-            <!-- Automatic Day Status & Navigation Actions -->
-            <div class="flex items-center gap-2">
-              <div id="day-auto-status" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface-2 border border-white/[0.08] text-xs font-mono">
-                <span id="day-auto-status-indicator">⚪</span>
-                <span id="day-auto-status-text" class="text-slate-300">Not Started (0/6)</span>
-              </div>
-
-              <!-- Quick Action: Mark Entire Day Complete -->
-              <button onclick="app.markEntireDayDone()" class="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-md bg-surface-2 hover:bg-surface-3 border border-white/[0.08] text-[11px] font-mono text-slate-300 hover:text-white transition" title="Mark all 6 sections for this day as completed">
-                <i data-lucide="check-check" class="w-3.5 h-3.5 text-sage-400"></i>
-                <span>Mark Day Done</span>
+            <!-- Right Side: Day Prev / Next Buttons -->
+            <div class="flex items-center space-x-1 flex-shrink-0 ml-auto">
+              <button id="btn-prev-day" onclick="app.navigateDay(-1)" class="p-1.5 rounded-md bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Previous Day">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
               </button>
-
-              <!-- Day Prev / Next Buttons -->
-              <div class="flex items-center space-x-1">
-                <button id="btn-prev-day" onclick="app.navigateDay(-1)" class="p-1.5 rounded-md bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Previous Day">
-                  <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                </button>
-                <button id="btn-next-day" onclick="app.navigateDay(1)" class="p-1.5 rounded-md bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Next Day">
-                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                </button>
-              </div>
+              <button id="btn-next-day" onclick="app.navigateDay(1)" class="p-1.5 rounded-md bg-surface-2 border border-white/[0.08] hover:bg-surface-3 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Next Day">
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
             </div>
           </div>
 
